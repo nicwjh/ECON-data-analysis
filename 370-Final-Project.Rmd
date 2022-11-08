@@ -1,0 +1,28 @@
+---
+title: "ECON 370 Final Project"
+author: 'SD: 2, 5, 19, 28'
+date: "2022-11-8"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+# ============================================
+# Set-up
+# ============================================
+```{r}
+library(readr)
+library(mosaic)
+library(data.table)
+library("xlsx")
+library(openxlsx)
+library(mvtnorm)
+```
+
+# ============================================
+# Tasks
+# ============================================
+```{r}
+
+
+```

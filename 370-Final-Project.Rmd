@@ -1,6 +1,6 @@
 ---
 title: "ECON 370 Final Project"
-author: 'SD:5, 17, 19, 28'
+author: 'SD:5, 17, 19, 28' # to add: missing group member
 date: "2022-11-8"
 output:
   word_document: default
@@ -17,6 +17,7 @@ library(data.table)
 library("xlsx")
 library(openxlsx)
 library(mvtnorm)
+library(tidyverse)
 ```
 
 # ============================================

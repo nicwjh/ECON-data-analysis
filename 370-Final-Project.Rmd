@@ -1,6 +1,6 @@
 ---
 title: "ECON 370 Final Project"
-author: 'SD:5, 17, 19, 28' # to add: missing group member
+author: 'SD:2, 5, 17, 19, 28' 
 date: "2022-11-8"
 output:
   word_document: default

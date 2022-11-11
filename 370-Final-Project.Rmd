@@ -21,8 +21,50 @@ library(tidyverse)
 ```
 
 # ============================================
-# Tasks
+# Question 1 - Download Data
+# ============================================
+
+Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the "switch" in our code).
+Delete eval = FALSE for first run of code to download files.
+```{r eval=FALSE} 
+for (i in 1998:2010){
+  
+url1 <- paste("http://www.nber.org/hcris/265-94/rnl_rpt265_94_", i , ".csv",sep = '')
+url2 <- paste("http://www.nber.org/hcris/265-94/rnl_nmrc265_94_", i, "_long.csv", sep = '')
+url3 <- paste("http://www.nber.org/hcris/265-94/rnl_alpha265_94_", i, "_long.csv", sep = '')
+
+destfile <- paste("./hcris_raw/rnl_rpt265_94_", i , ".csv",sep = '')
+download.file(url1,destfile)
+destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
+download.file(url2,destfile)
+destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
+download.file(url2,destfile)
+}
+```
+
+# ============================================
+# Question 2 - Cleaning The Data
 # ============================================
 ```{r}
+# Read in all CSVs
+for (i in 1998:2010){
+  
+rpt_name = paste("rpt", i, sep = '')
+nmrc_name = paste("nmrc", i, sep = '')
+alpha_name = paste("alpha", i, sep = '')
 
+rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
+nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+
+assign(rpt_name, rpt)
+assign(nmrc_name, nmrc)
+assign(alpha_name, alpha)
+}
+
+# clean up environment
+rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 ```
+# ============================================
+# Question 3 - Analysis 
+# ============================================

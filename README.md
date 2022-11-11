@@ -1,5 +1,3 @@
-
-
 # 370 Final Project
 Project progess and notes denoted below.
 

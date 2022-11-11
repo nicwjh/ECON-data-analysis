@@ -2,7 +2,8 @@
 
 # 370 Final Project
 Project progess and notes denoted below.
-\n~~Strikethrough completed tasks.~~
+
+~~Strikethrough completed tasks.~~
 
 # TO-DO
 

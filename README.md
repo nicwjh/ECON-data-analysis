@@ -9,13 +9,15 @@ Project progess and notes denoted below.
 
 ## Question 1 - Download Data 
 ~~1. Download data from NBER site~~ 
-\n~~2. Create hcris_raw directory for final project~~
-\m~~3. Implement "Switch" in code that indicates whether or not data should be downloaded (prevent multiple downloads with multiple runs)~~
+
+~~2. Create hcris_raw directory for final project~~
+
+~~3. Implement "Switch" in code that indicates whether or not data should be downloaded (prevent multiple downloads with multiple runs)~~
 
 ## Question 2 - Cleaning the Data
 Overview: extract variables, merge data, clean data
 ### Reformatting The Raw Data
-~~0. Read in CSVs~~
+~~ Read in CSVs~~
 1. Create key for variables (to merge) 
 2. Convert long to wide data 
 3. Merge two variables from rpt data 

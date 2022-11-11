@@ -2,14 +2,14 @@
 
 # 370 Final Project
 Project progess and notes denoted below.
-~~Strikethrough completed tasks.~~
+\n~~Strikethrough completed tasks.~~
 
 # TO-DO
 
 ## Question 1 - Download Data 
 ~~1. Download data from NBER site~~ 
-~~2. Create hcris_raw directory for final project~~
-~~3. Implement "Switch" in code that indicates whether or not data should be downloaded (prevent multiple downloads with multiple runs)~~
+\n~~2. Create hcris_raw directory for final project~~
+\m~~3. Implement "Switch" in code that indicates whether or not data should be downloaded (prevent multiple downloads with multiple runs)~~
 
 ## Question 2 - Cleaning the Data
 Overview: extract variables, merge data, clean data

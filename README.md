@@ -4,6 +4,7 @@ Project progess and notes denoted below.
 ~~Strikethrough completed tasks.~~
 
 # TO-DO
+Next task: 
 
 ## ~~Question 1 - Download Data~~ 
 ~~1. Download data from NBER site~~ 

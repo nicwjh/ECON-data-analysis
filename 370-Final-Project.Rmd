@@ -23,6 +23,7 @@ library(tidyverse)
 # ============================================
 # Question 1 - Download Data
 # ============================================
+ellis test
 
 Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the "switch" in our code).
 Delete eval = FALSE for first run of code to download files.

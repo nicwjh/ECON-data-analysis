@@ -46,5 +46,7 @@ Then:
 ## Question 3 - Analysis 
 1. Analyze how chains differ from independent clinics in their costs/behavior (at least ~half a page of writing)
 
+On completion: remember to delete hcris raw
+
 ## Notes for presentation: 
 NULL

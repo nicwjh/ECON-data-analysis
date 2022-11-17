@@ -66,6 +66,10 @@ assign(alpha_name, alpha)
 
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
+
+## DELETE THIS WHEN DONE: loading Alex's data for part  2
+temp <- read_csv("hcris_panel_raw.csv")
+variable_codes <- read.csv("variable_codes.csv")
 ```
 
 # ============================================

@@ -4,6 +4,7 @@ Project progess and notes denoted below.
 ~~Strikethrough completed tasks.~~
 
 # TO-DO
+Next task: 
 
 ## ~~Question 1 - Download Data~~ 
 ~~1. Download data from NBER site~~ 
@@ -44,6 +45,29 @@ Then:
 
 ## Question 3 - Analysis 
 1. Analyze how chains differ from independent clinics in their costs/behavior (at least ~half a page of writing)
+
+**On completion: remember to delete hcris raw
+
+## Notes 11/17 
+observation in final data: provider_num, year -> rpt_num 
+each provider number & year has a unique rpt_num
+rpt_num -> worksheet, line, column, value 
+rpt_num -> prvdr_num, year, var1, var2
+
+provider number and year map to report number
+report number maps to a worksheet, line, column, value. 
+check Alex's chart he uploaded 
+nmrc and alpha have values in the data
+use worksheet, line, coluimn to map to variable codes that Alex gave to get variable names 
+
+chain_identity: important to know what chains own the clinics
+epo variable: be careful. some people don't report it correctly 
+one strategy: epo_total * 1000 / cost ~ $8-12. if not in this range, can delete 
+- in documentation, don't spend too much time on this 
+
+listen to the podcast(first 25 minutes)/read the paper for context 
+
+strategy: 
 
 ## Notes for presentation: 
 NULL

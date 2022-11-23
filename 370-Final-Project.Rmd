@@ -28,6 +28,7 @@ Note: r eval = FALSE prevents code chunk from running when data is already downl
 Delete eval = FALSE for first run of code to download files.
 ```{r eval=FALSE} 
 for (i in 1998:2010){
+  
 url1 <- paste("http://www.nber.org/hcris/265-94/rnl_rpt265_94_", i , ".csv",sep = '')
 url2 <- paste("http://www.nber.org/hcris/265-94/rnl_nmrc265_94_", i, "_long.csv", sep = '')
 url3 <- paste("http://www.nber.org/hcris/265-94/rnl_alpha265_94_", i, "_long.csv", sep = '')
@@ -38,6 +39,7 @@ destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
 download.file(url2,destfile)
 destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
 download.file(url2,destfile)
+
 }
 ```
 
@@ -64,6 +66,11 @@ assign(alpha_name, alpha)
 
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
+
+## DELETE THIS WHEN DONE: loading Alex's data for part  2
+temp <- read_csv("hcris_panel_raw.csv")
+
+variable_codes <- read.csv("variable_codes.csv")
 ```
 
 # ============================================

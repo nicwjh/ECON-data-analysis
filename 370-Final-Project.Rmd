@@ -6,7 +6,7 @@ output:
   word_document: default
   pdf_document: default
 ---
-
+#test again
 # ============================================
 # Set-up
 # ============================================
@@ -14,19 +14,19 @@ output:
 library(readr)
 library(mosaic)
 library(data.table)
-library("xlsx")
+install.packages("xlsx")
+library('xlsx')
 library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
 ```
-#sophia test
 # ============================================
 # Question 1 - Download Data
 # ============================================
 
 Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the "switch" in our code).
 Delete eval = FALSE for first run of code to download files.
-```{r eval=FALSE} 
+```{r, eval=FALSE} 
 for (i in 1998:2010){
   
 url1 <- paste("http://www.nber.org/hcris/265-94/rnl_rpt265_94_", i , ".csv",sep = '')
@@ -45,6 +45,7 @@ download.file(url2,destfile)
 # ============================================
 # Question 2 - Cleaning The Data
 # ============================================
+
 ```{r}
 # Read in all CSVs
 for (i in 1998:2010){
@@ -53,18 +54,37 @@ rpt_name = paste("rpt", i, sep = '')
 nmrc_name = paste("nmrc", i, sep = '')
 alpha_name = paste("alpha", i, sep = '')
 
-rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
+rpt <- read_csv(paste("./hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
 nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+
+rpt$year = i
+nmrc$year = i
+alpha$year = i
+
+nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
+alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
 
 assign(rpt_name, rpt)
 assign(nmrc_name, nmrc)
 assign(alpha_name, alpha)
 }
 
+
+#drop ids not in variables.csv using a %in% b bool, loop
+variable_names = read.csv("variable_codes.csv")
+
+
+#dcast to convert L to W individually then merge, unit of obs should be report after this
+
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
+
+
+
 ```
+
+
 # ============================================
 # Question 3 - Analysis 
 # ============================================

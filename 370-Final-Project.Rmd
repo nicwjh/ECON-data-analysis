@@ -46,6 +46,8 @@ download.file(url2,destfile)
 # ============================================
 # Question 2 - Cleaning The Data
 # ============================================
+
+## Read in raw data
 ```{r}
 # Read in all CSVs
 for (i in 1998:2010){
@@ -58,6 +60,13 @@ rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col
 nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 
+rpt$year = i
+nmrc$year = i
+alpha$year = i
+
+nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
+alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
+
 assign(rpt_name, rpt)
 assign(nmrc_name, nmrc)
 assign(alpha_name, alpha)
@@ -67,12 +76,112 @@ assign(alpha_name, alpha)
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 
-## DELETE THIS WHEN DONE: loading Alex's data for part  2
+## DELETE THIS WHEN DONE: loading Alex's data for part 2
+## note to all: use temp for cleaning data portion 
 temp <- read_csv("hcris_panel_raw.csv")
 
 variable_codes <- read.csv("variable_codes.csv")
 ```
 
+## Reformatting The Raw Data (current draft, merge isn't working. variable codes not lining up)
+```{r eval=FALSE}
+# create keys for alpha and nmrc data
+alpha1998$key = paste(alpha1998$wksht_cd, alpha1998$line_num, alpha1998$clmn_num, sep = '')
+alpha1999$key = paste(alpha1999$wksht_cd, alpha1999$line_num, alpha1999$clmn_num, sep = '')
+alpha2000$key = paste(alpha2000$wksht_cd, alpha2000$line_num, alpha2000$clmn_num, sep = '')
+alpha2001$key = paste(alpha2001$wksht_cd, alpha2001$line_num, alpha2001$clmn_num, sep = '')
+alpha2002$key = paste(alpha2002$wksht_cd, alpha2002$line_num, alpha2002$clmn_num, sep = '')
+alpha2003$key = paste(alpha2003$wksht_cd, alpha2003$line_num, alpha2003$clmn_num, sep = '')
+alpha2004$key = paste(alpha2004$wksht_cd, alpha2004$line_num, alpha2004$clmn_num, sep = '')
+alpha2005$key = paste(alpha2005$wksht_cd, alpha2005$line_num, alpha2005$clmn_num, sep = '')
+alpha2006$key = paste(alpha2006$wksht_cd, alpha2006$line_num, alpha2006$clmn_num, sep = '')
+alpha2007$key = paste(alpha2007$wksht_cd, alpha2007$line_num, alpha2007$clmn_num, sep = '')
+alpha2008$key = paste(alpha2008$wksht_cd, alpha2008$line_num, alpha2008$clmn_num, sep = '')
+alpha2009$key = paste(alpha2009$wksht_cd, alpha1998$line_num, alpha2009$clmn_num, sep = '')
+alpha2010$key = paste(alpha2010$wksht_cd, alpha2010$line_num, alpha2010$clmn_num, sep = '')
+
+nmrc1998$key = paste(nmrc1998$wksht_cd, nmrc1998$line_num, nmrc1998$clmn_num, sep = '')
+nmrc1999$key = paste(nmrc1999$wksht_cd, nmrc1999$line_num, nmrc1999$clmn_num, sep = '')
+nmrc2000$key = paste(nmrc2000$wksht_cd, nmrc2000$line_num, nmrc2000$clmn_num, sep = '')
+nmrc2001$key = paste(nmrc2001$wksht_cd, nmrc2001$line_num, nmrc2001$clmn_num, sep = '')
+nmrc2002$key = paste(nmrc2002$wksht_cd, nmrc2002$line_num, nmrc2002$clmn_num, sep = '')
+nmrc2003$key = paste(nmrc2003$wksht_cd, nmrc2003$line_num, nmrc2003$clmn_num, sep = '')
+nmrc2004$key = paste(nmrc2004$wksht_cd, nmrc2004$line_num, nmrc2004$clmn_num, sep = '')
+nmrc2005$key = paste(nmrc2005$wksht_cd, nmrc2005$line_num, nmrc2005$clmn_num, sep = '')
+nmrc2006$key = paste(nmrc2006$wksht_cd, nmrc2006$line_num, nmrc2006$clmn_num, sep = '')
+nmrc2007$key = paste(nmrc2007$wksht_cd, nmrc2007$line_num, nmrc2007$clmn_num, sep = '')
+nmrc2008$key = paste(nmrc2008$wksht_cd, nmrc2008$line_num, nmrc2008$clmn_num, sep = '')
+nmrc2009$key = paste(nmrc2009$wksht_cd, nmrc2009$line_num, nmrc2009$clmn_num, sep = '')
+nmrc2010$key = paste(nmrc2010$wksht_cd, nmrc2010$line_num, nmrc2010$clmn_num, sep = '')
+
+# merge datasets: vector memory exhausted error? 
+merge(x = nmrc1998, y = alpha1998, by = "key")
+merge(x = nmrc1999, y = alpha1999, by = "key")
+merge(x = nmrc2000, y = alpha2000, by = "key")
+merge(x = nmrc2001, y = alpha2001, by = "key")
+merge(x = nmrc2002, y = alpha2002, by = "key")
+merge(x = nmrc2003, y = alpha2003, by = "key")
+merge(x = nmrc2004, y = alpha2004, by = "key")
+merge(x = nmrc2005, y = alpha2005, by = "key")
+merge(x = nmrc2006, y = alpha2006, by = "key")
+merge(x = nmrc2007, y = alpha2007, by = "key")
+merge(x = nmrc2008, y = alpha2008, by = "key")
+merge(x = nmrc2009, y = alpha2009, by = "key")
+merge(x = nmrc2010, y = alpha2010, by = "key")
+
+# helper function to check str length
+check_count = function(){
+count = 0
+for (i in 1:dim(alpha1999)[1]){
+  if (str_length(alpha1999$line_num[i]) != 5){
+  count = count + 1
+  print(i)
+  }
+}
+print(count)
+}
+
+# #stackoverflow solution to vector limit problem: 
+# library(usethis) 
+# usethis::edit_r_environ()
+```
+
+
+## Cleaning The Data
+```{r}
+# 1
+
+# 2
+
+# 3
+
+# 4
+
+# 5
+
+# 6
+
+# 7
+
+# 8
+
+# 9
+
+# 10
+
+# 11
+sort(temp$chain_identity)
+
+# 12
+
+
+```
+
+
 # ============================================
 # Question 3 - Analysis 
 # ============================================
+```{r}
+vfr
+```
+

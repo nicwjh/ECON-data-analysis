@@ -62,8 +62,16 @@ rpt$year = i
 nmrc$year = i
 alpha$year = i
 
-nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
-alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
+#this code drops extra zeros
+alpha$line_num = gsub("^0+","",alpha$line_num)
+alpha$clmn_num = gsub("^0+","",alpha$clmn_num)
+
+nmrc$line_num = gsub("^0+","",nmrc$line_num)
+nmrc$clmn_num = gsub("^0+","",nmrc$clmn_num)
+
+#now keys are correct here
+nmrc$key = paste0(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num)
+alpha$key = paste0(alpha$wksht_cd, alpha$line_num, alpha$clmn_num)
 
 assign(rpt_name, rpt)
 assign(nmrc_name, nmrc)
@@ -71,9 +79,21 @@ assign(alpha_name, alpha)
 }
 
 
-#drop ids not in variables.csv using a %in% b bool, loop
-variable_names = read.csv("variable_codes.csv")
+variable_codes = read.csv("variable_codes.csv")
+variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
 
+#drop ids not in variables.csv using a %in% b bool, loop
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
+              alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009,
+              alpha2010)
+
+nrmc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003,
+             nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009,
+             nmrc2010)
+
+#this gets list of trues and falses that I think are correct
+alpha2000$key %in% variable_codes$key
+#use this to drop falses?
 
 #dcast to convert L to W individually then merge, unit of obs should be report after this
 

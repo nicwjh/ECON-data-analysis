@@ -17,6 +17,7 @@ library("xlsx")
 library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
+library(stringr)
 ```
 
 # ============================================
@@ -37,7 +38,7 @@ download.file(url1,destfile)
 destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
 download.file(url2,destfile)
 destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
-download.file(url2,destfile)
+download.file(url3,destfile)
 
 }
 ```
@@ -48,7 +49,40 @@ download.file(url2,destfile)
 
 ## Read in raw data
 ```{r}
-# Read in all CSVs
+# Helper function to return indices of dataframe with matching variable code 
+parse = function(data, match){
+  vars = grepl(match, data)
+  indices = c()
+  for (i in 1:length(vars)){
+    if (vars[i]){
+      indices = c(indices,i)
+    }
+  }
+  indices
+}
+
+## DELETE THIS WHEN DONE: loading Alex's data for part 2
+## note to all: use temp for cleaning data portion 
+temp <- read_csv("hcris_panel_raw.csv")
+
+variable_codes <- read.csv("variable_codes.csv")
+
+# 0 pad lines and columns 
+for (i in 1:nrow(variable_codes)){
+  variable_codes$line[i] = str_pad(variable_codes$line[i], 5, pad = "0")
+  variable_codes$column[i] = str_pad(variable_codes$column[i], 4, pad = "0")
+}
+
+# generate variable code keys 
+variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
+
+# fix error in data
+variable_codes$key[35] = "S000001001020300"
+
+# regular expression to parse keys 
+toMatch = paste(variable_codes$key, collapse = "|")
+
+# Read in all CSVs 
 for (i in 1998:2010){
   
 rpt_name = paste("rpt", i, sep = '')
@@ -66,39 +100,42 @@ alpha$year = i
 nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
 alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
 
-assign(rpt_name, rpt)
-assign(nmrc_name, nmrc)
-assign(alpha_name, alpha)
+# parse alpha and nmrc data for matching variable codes 
+indices = parse(nmrc$key, toMatch)
+nmrc_parsed = nmrc[indices,]
+indices = parse(alpha$key, toMatch)
+alpha_parsed = alpha[indices,]
 
+assign(rpt_name, rpt)
+assign(nmrc_name, nmrc_parsed)
+assign(alpha_name, alpha_parsed)
 }
 
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
-
-## DELETE THIS WHEN DONE: loading Alex's data for part 2
-## note to all: use temp for cleaning data portion 
-temp <- read_csv("hcris_panel_raw.csv")
-
-variable_codes <- read.csv("variable_codes.csv")
-#generate key for variable codes to parse
-variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
-
-# fix space in data
-variable_codes$key[35] = "S000001102300"
 ```
 
 ## Reformatting The Raw Data (current draft, merge isn't working. variable codes not lining up)
 ```{r eval=FALSE}
+
+```
+Junk code and notes for Nick's reference
+```{r}
 # create keys for alpha and nmrc data
+
+
+
 
 # merge datasets
 ## vector memory exhausted error? 
 ## Question for alex: why are the datasets (nmrc and alpha) identical? 
 
-# TO SOPHIA: I'm trying to parse through the dataframe to check for a variable_code match (to drop observations without a match)
-toMatch = paste(variable_codes$key, collapse = "|")
-result = filter(nmrc1999, grepl(toMatch, key))
 
+#result = filter(nmrc1999, grepl(toMatch, key))
+
+for (i in 1998:2010){
+  vars = grepl(toMatch, nmrc1998$key)
+}
 # SOPHIA: problem is - there doesn't seem to be any matchs for the keys in any of the datafranes, 
 sum(grepl(toMatch, nmrc1998$key))
 sum(grepl(toMatch, nmrc1999$key))

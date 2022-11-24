@@ -81,6 +81,11 @@ rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 temp <- read_csv("hcris_panel_raw.csv")
 
 variable_codes <- read.csv("variable_codes.csv")
+#generate key for variable codes to parse
+variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
+
+# fix space in data
+variable_codes$key[35] = "S000001102300"
 ```
 
 ## Reformatting The Raw Data (current draft, merge isn't working. variable codes not lining up)
@@ -90,6 +95,12 @@ variable_codes <- read.csv("variable_codes.csv")
 # merge datasets
 ## vector memory exhausted error? 
 ## Question: why are the datasets (nmrc and alpha) identical? 
+
+# trying to parse through the dataframe to check for a variable_code match 
+toMatch = paste(variable_codes$key, collapse = "|")
+result = filter(nmrc1999, grepl(toMatch, key))
+grepl("[variable_codes$key]", nmrc1998$key)
+
 merge(x = nmrc1998, y = alpha1998, by = "key")
 merge(x = nmrc1999, y = alpha1999, by = "key")
 merge(x = nmrc2000, y = alpha2000, by = "key")

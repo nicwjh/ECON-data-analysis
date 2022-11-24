@@ -94,12 +94,41 @@ variable_codes$key[35] = "S000001102300"
 
 # merge datasets
 ## vector memory exhausted error? 
-## Question: why are the datasets (nmrc and alpha) identical? 
+## Question for alex: why are the datasets (nmrc and alpha) identical? 
 
-# trying to parse through the dataframe to check for a variable_code match 
+# TO SOPHIA: I'm trying to parse through the dataframe to check for a variable_code match (to drop observations without a match)
 toMatch = paste(variable_codes$key, collapse = "|")
 result = filter(nmrc1999, grepl(toMatch, key))
-grepl("[variable_codes$key]", nmrc1998$key)
+
+# SOPHIA: problem is - there doesn't seem to be any matchs for the keys in any of the datafranes, 
+sum(grepl(toMatch, nmrc1998$key))
+sum(grepl(toMatch, nmrc1999$key))
+sum(grepl(toMatch, nmrc2000$key))
+sum(grepl(toMatch, nmrc2001$key))
+sum(grepl(toMatch, nmrc2002$key))
+sum(grepl(toMatch, nmrc2003$key))
+sum(grepl(toMatch, nmrc2004$key))
+sum(grepl(toMatch, nmrc2005$key))
+sum(grepl(toMatch, nmrc2006$key))
+sum(grepl(toMatch, nmrc2007$key))
+sum(grepl(toMatch, nmrc2008$key))
+sum(grepl(toMatch, nmrc2009$key))
+sum(grepl(toMatch, nmrc2010$key))
+
+sum(grepl(toMatch, alpha1998$key))
+sum(grepl(toMatch, alpha1999$key))
+sum(grepl(toMatch, alpha2000$key))
+sum(grepl(toMatch, alpha2001$key))
+sum(grepl(toMatch, alpha2002$key))
+sum(grepl(toMatch, alpha2003$key))
+sum(grepl(toMatch, alpha2004$key))
+sum(grepl(toMatch, alpha2005$key))
+sum(grepl(toMatch, alpha2006$key))
+sum(grepl(toMatch, alpha2007$key))
+sum(grepl(toMatch, alpha2008$key))
+sum(grepl(toMatch, alpha2009$key))
+sum(grepl(toMatch, alpha2010$key))
+
 
 merge(x = nmrc1998, y = alpha1998, by = "key")
 merge(x = nmrc1999, y = alpha1999, by = "key")

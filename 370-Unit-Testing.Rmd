@@ -1,0 +1,170 @@
+---
+title: "ECON 370 Final Project"
+author: 'SD:2, 5, 17, 19, 28' 
+date: "2022-11-8"
+output:
+  word_document: default
+  pdf_document: default
+---
+#test again
+# ============================================
+# Set-up
+# ============================================
+```{r}
+library(readr)
+library(mosaic)
+library(data.table)
+install.packages("xlsx")
+library('xlsx')
+library(openxlsx)
+library(mvtnorm)
+library(tidyverse)
+```
+# ============================================
+# Question 1 - Download Data
+# ============================================
+
+Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the "switch" in our code).
+Delete eval = FALSE for first run of code to download files.
+```{r, eval=FALSE} 
+for (i in 1998:2010){
+  
+url1 <- paste("http://www.nber.org/hcris/265-94/rnl_rpt265_94_", i , ".csv",sep = '')
+url2 <- paste("http://www.nber.org/hcris/265-94/rnl_nmrc265_94_", i, "_long.csv", sep = '')
+url3 <- paste("http://www.nber.org/hcris/265-94/rnl_alpha265_94_", i, "_long.csv", sep = '')
+destfile <- paste("./hcris_raw/rnl_rpt265_94_", i , ".csv",sep = '')
+download.file(url1,destfile)
+destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
+download.file(url2,destfile)
+destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
+download.file(url2,destfile)
+}
+```
+
+# ============================================
+# Question 2 - Cleaning The Data
+# ============================================
+
+```{r}
+# Read in all CSVs
+for (i in 1998:2010){
+  
+rpt_name = paste("rpt", i, sep = '')
+nmrc_name = paste("nmrc", i, sep = '')
+alpha_name = paste("alpha", i, sep = '')
+rpt <- read_csv(paste("./hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
+nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+rpt$year = i
+nmrc$year = i
+alpha$year = i
+#this code drops extra zeros
+alpha$line_num = gsub("^0+","",alpha$line_num)
+alpha$clmn_num = gsub("^0+","",alpha$clmn_num)
+nmrc$line_num = gsub("^0+","",nmrc$line_num)
+nmrc$clmn_num = gsub("^0+","",nmrc$clmn_num)
+#now keys are correct here
+nmrc$key = paste0(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num)
+alpha$key = paste0(alpha$wksht_cd, alpha$line_num, alpha$clmn_num)
+assign(rpt_name, rpt)
+assign(nmrc_name, nmrc)
+assign(alpha_name, alpha)
+}
+variable_codes = read.csv("variable_codes.csv")
+variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
+#drop ids not in variables.csv using a %in% b bool, loop
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
+              alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009,
+              alpha2010)
+nrmc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003,
+             nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009,
+             nmrc2010)
+#this gets list of trues and falses that I think are correct
+alpha2000$key %in% variable_codes$key
+#use this to drop falses?
+#dcast to convert L to W individually then merge, unit of obs should be report after this
+# clean up environment
+rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
+```
+Nick's junk code 
+```{r}
+# create keys for alpha and nmrc data
+
+
+
+
+# merge datasets
+## vector memory exhausted error? 
+## Question for alex: why are the datasets (nmrc and alpha) identical? 
+
+
+#result = filter(nmrc1999, grepl(toMatch, key))
+
+for (i in 1998:2010){
+  vars = grepl(toMatch, nmrc1998$key)
+}
+# SOPHIA: problem is - there doesn't seem to be any matchs for the keys in any of the datafranes, 
+sum(grepl(toMatch, nmrc1998$key))
+sum(grepl(toMatch, nmrc1999$key))
+sum(grepl(toMatch, nmrc2000$key))
+sum(grepl(toMatch, nmrc2001$key))
+sum(grepl(toMatch, nmrc2002$key))
+sum(grepl(toMatch, nmrc2003$key))
+sum(grepl(toMatch, nmrc2004$key))
+sum(grepl(toMatch, nmrc2005$key))
+sum(grepl(toMatch, nmrc2006$key))
+sum(grepl(toMatch, nmrc2007$key))
+sum(grepl(toMatch, nmrc2008$key))
+sum(grepl(toMatch, nmrc2009$key))
+sum(grepl(toMatch, nmrc2010$key))
+
+sum(grepl(toMatch, alpha1998$key))
+sum(grepl(toMatch, alpha1999$key))
+sum(grepl(toMatch, alpha2000$key))
+sum(grepl(toMatch, alpha2001$key))
+sum(grepl(toMatch, alpha2002$key))
+sum(grepl(toMatch, alpha2003$key))
+sum(grepl(toMatch, alpha2004$key))
+sum(grepl(toMatch, alpha2005$key))
+sum(grepl(toMatch, alpha2006$key))
+sum(grepl(toMatch, alpha2007$key))
+sum(grepl(toMatch, alpha2008$key))
+sum(grepl(toMatch, alpha2009$key))
+sum(grepl(toMatch, alpha2010$key))
+
+
+merge(x = nmrc1998, y = alpha1998, by = "key")
+merge(x = nmrc1999, y = alpha1999, by = "key")
+merge(x = nmrc2000, y = alpha2000, by = "key")
+merge(x = nmrc2001, y = alpha2001, by = "key")
+merge(x = nmrc2002, y = alpha2002, by = "key")
+merge(x = nmrc2003, y = alpha2003, by = "key")
+merge(x = nmrc2004, y = alpha2004, by = "key")
+merge(x = nmrc2005, y = alpha2005, by = "key")
+merge(x = nmrc2006, y = alpha2006, by = "key")
+merge(x = nmrc2007, y = alpha2007, by = "key")
+merge(x = nmrc2008, y = alpha2008, by = "key")
+merge(x = nmrc2009, y = alpha2009, by = "key")
+merge(x = nmrc2010, y = alpha2010, by = "key")
+
+# helper function to check str length
+check_count = function(){
+count = 0
+for (i in 1:dim(alpha1999)[1]){
+  if (str_length(alpha1999$line_num[i]) != 5){
+  count = count + 1
+  print(i)
+  }
+}
+print(count)
+}
+
+# #stackoverflow solution to vector limit problem: 
+# library(usethis) 
+# usethis::edit_r_environ()
+```
+
+
+# ============================================
+# Question 3 - Analysis 
+# ============================================

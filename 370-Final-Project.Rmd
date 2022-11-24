@@ -6,7 +6,6 @@ output:
   word_document: default
   pdf_document: default
 ---
-# ellis
 # ============================================
 # Set-up
 # ============================================

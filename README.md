@@ -15,18 +15,26 @@ Next task:
 
 ## Question 2 - Cleaning the Data
 Overview: extract variables, merge data, clean data
-### Reformatting The Raw Data
+~~### Reformatting The Raw Data~~
 ~~Read in CSVs~~
+
 ~~1. Create key for variables (to merge)~~
+
 ~~2. Convert long to wide data~~
+
 ~~3. Merge two variables from rpt data~~
+
 ~~4. Add "year" as a variable~~
+
 ~~5. Save resulting data as a hcris.YEAR.csv~~
+
 ~~6. Check: Two subdirectories in main directory, 13 files in cleaned folder~~
 
 ### Clean The Reformatted Data 
-Options:  
+~~Options:~~
+  
 ~~1. Read in 1998 data as hcris_data. Loop and rbind~~
+
 ~~2. list.files(), lapply(), fread()~~
 
 Then: 

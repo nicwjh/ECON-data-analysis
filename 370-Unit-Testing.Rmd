@@ -6,7 +6,6 @@ output:
   word_document: default
   pdf_document: default
 ---
-#test again
 # ============================================
 # Set-up
 # ============================================
@@ -14,7 +13,6 @@ output:
 library(readr)
 library(mosaic)
 library(data.table)
-install.packages("xlsx")
 library('xlsx')
 library(openxlsx)
 library(mvtnorm)
@@ -37,7 +35,7 @@ download.file(url1,destfile)
 destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
 download.file(url2,destfile)
 destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
-download.file(url2,destfile)
+download.file(url3,destfile)
 }
 ```
 
@@ -87,7 +85,7 @@ alpha2000$key %in% variable_codes$key
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 ```
 Nick's junk code 
-```{r}
+```{r eval = FALSE}
 # create keys for alpha and nmrc data
 
 

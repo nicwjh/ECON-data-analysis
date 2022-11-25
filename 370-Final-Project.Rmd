@@ -93,9 +93,10 @@ rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col
 nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 
-rpt$year = i
-nmrc$year = i
-alpha$year = i
+## note: checked instructions, probably add in the year later (after merging) 
+#rpt$year = i
+#nmrc$year = i
+#alpha$year = i
 
 nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
 alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
@@ -112,18 +113,58 @@ assign(alpha_name, alpha_parsed)
 }
 
 # clean up environment
-rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
+rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name, alpha_parsed, nmrc_parsed)
 ```
 
-## Reformatting The Raw Data (current draft, merge isn't working. variable codes not lining up)
-```{r eval=FALSE}
-
-```
-Junk code and notes for Nick's reference
+## Reformatting The Raw Data 
 ```{r}
+# given a coded key string, function will return the corresponding variable name 
+rename_key = function(key){
+  for (i in 1:nrow(variable_codes)){
+    if (key == variable_codes$key[i]){
+      return(variable_codes$variable[i])
+      stop()
+    }
+  }
+}
+
+# merge alpha and nmrc datasets for separate years 
+long_1998 = merge(x = nmrc1998, y = alpha1998, by = "rpt_rec_num")
+long_1999 = merge(x = nmrc1999, y = alpha1999, by = "rpt_rec_num")
+long_2000 = merge(x = nmrc2000, y = alpha2000, by = "rpt_rec_num")
+long_2001 = merge(x = nmrc2001, y = alpha2001, by = "rpt_rec_num")
+long_2002 = merge(x = nmrc2002, y = alpha2002, by = "rpt_rec_num")
+long_2003 = merge(x = nmrc2003, y = alpha2003, by = "rpt_rec_num")
+long_2004 = merge(x = nmrc2004, y = alpha2004, by = "rpt_rec_num")
+long_2005 = merge(x = nmrc2005, y = alpha2005, by = "rpt_rec_num")
+long_2006 = merge(x = nmrc2006, y = alpha2006, by = "rpt_rec_num")
+long_2007 = merge(x = nmrc2007, y = alpha2007, by = "rpt_rec_num")
+long_2008 = merge(x = nmrc2008, y = alpha2008, by = "rpt_rec_num")
+long_2009 = merge(x = nmrc2009, y = alpha2009, by = "rpt_rec_num")
+long_2010 = merge(x = nmrc2010, y = alpha2010, by = "rpt_rec_num")
+
+
+# code chunk here renames all the keys to the corresponding variable name. need to do this? not sure 
+idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
+long_1998$key.x <- dplyr::recode(
+  long_1998$key.x,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+long_1998$key.y <- dplyr::recode(
+  long_1998$key.y,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+
+### convert long to wide data 
+## note: this line of code below is wrong. still not sure how to reformat long to wide properly 
+wide_1998 = dcast(as.data.table(long_test),rpt_rec_num ~ key.x, value.var = c("itm_val_num"))
+
+### add variable "year" for each of the 13 reports 
+
+
+### save resulting data as hcris_YEAR.csv
 
 ```
-
 
 ## Cleaning The Data
 ```{r}
@@ -177,11 +218,9 @@ temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVIT
 
 ```
 
-
 # ============================================
 # Question 3 - Analysis 
 # ============================================
 ```{r}
 
 ```
-

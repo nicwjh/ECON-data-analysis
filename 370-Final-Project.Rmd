@@ -157,6 +157,7 @@ long_1998$key.y <- dplyr::recode(
 
 ### convert long to wide data 
 ## note: this line of code below is wrong. still not sure how to reformat long to wide properly 
+
 wide_1998 = dcast(as.data.table(long_test),rpt_rec_num ~ key.x, value.var = c("itm_val_num"))
 
 ### add variable "year" for each of the 13 reports 

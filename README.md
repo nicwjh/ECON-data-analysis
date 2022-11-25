@@ -16,7 +16,8 @@ Next task:
 ## Question 2 - Cleaning the Data
 Overview: extract variables, merge data, clean data
 
-~~ ### Reformatting The Raw Data~~
+~~Reformatting The Raw Data~~
+
 ~~Read in CSVs~~
 
 ~~1. Create key for variables (to merge)~~

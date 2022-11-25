@@ -206,6 +206,7 @@ fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
 ```{r}
 hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
 
+# rbind all 13 datasets
 for (i in 1999:2010){
   current = paste("hcris_cleaned/hcris_", i, ".csv", sep = '')
   to_bind <- read_csv(current, show_col_types = F)

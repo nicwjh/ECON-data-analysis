@@ -162,6 +162,80 @@ print(count)
 # usethis::edit_r_environ()
 ```
 
+```{r}
+# merge alpha and nmrc datasets for separate years 
+long_1998 = merge(x = nmrc1998, y = alpha1998, by = "rpt_rec_num")
+long_1999 = merge(x = nmrc1999, y = alpha1999, by = "rpt_rec_num")
+long_2000 = merge(x = nmrc2000, y = alpha2000, by = "rpt_rec_num")
+long_2001 = merge(x = nmrc2001, y = alpha2001, by = "rpt_rec_num")
+long_2002 = merge(x = nmrc2002, y = alpha2002, by = "rpt_rec_num")
+long_2003 = merge(x = nmrc2003, y = alpha2003, by = "rpt_rec_num")
+long_2004 = merge(x = nmrc2004, y = alpha2004, by = "rpt_rec_num")
+long_2005 = merge(x = nmrc2005, y = alpha2005, by = "rpt_rec_num")
+long_2006 = merge(x = nmrc2006, y = alpha2006, by = "rpt_rec_num")
+long_2007 = merge(x = nmrc2007, y = alpha2007, by = "rpt_rec_num")
+long_2008 = merge(x = nmrc2008, y = alpha2008, by = "rpt_rec_num")
+long_2009 = merge(x = nmrc2009, y = alpha2009, by = "rpt_rec_num")
+long_2010 = merge(x = nmrc2010, y = alpha2010, by = "rpt_rec_num")
+
+# given a coded key string, function will return the corresponding variable name 
+rename_key = function(key){
+  for (i in 1:nrow(variable_codes)){
+    if (key == variable_codes$key[i]){
+      return(variable_codes$variable[i])
+      stop()
+    }
+  }
+}
+
+test_merge = merged1998
+test_merge$fy_bgn_dt = rpt1998$fy_bgn_dt
+
+
+test_alpha = alpha1998
+
+test_alpha$key <- dplyr::recode(
+  test_alpha$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(test_alpha)
+wide_test = dcast(test_alpha, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+
+test_nmrc$key <- dplyr::recode(
+  test_nmrc$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(test_nmrc)
+wide_test2 = dcast(test_nmrc, rpt_rec_num~key, value.var = "itm_val_num")
+
+merge_test = merge(x = wide_test2, y = wide_test, by = "rpt_rec_num")
+
+
+
+# code chunk here renames all the keys to the corresponding variable name. need to do this? not sure 
+idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
+long_1998$key.x <- dplyr::recode(
+  long_1998$key.x,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+long_1998$key.y <- dplyr::recode(
+  long_1998$key.y,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+
+### convert long to wide data 
+## note: this line of code below is wrong. still not sure how to reformat long to wide properly 
+
+wide_1998 = dcast(as.data.table(long_test),rpt_rec_num ~ key.x, value.var = c("itm_val_num"))
+
+### add variable "year" for each of the 13 reports 
+
+
+### save resulting data as hcris_YEAR.csv
+
+```
+
+
 
 # ============================================
 # Question 3 - Analysis 

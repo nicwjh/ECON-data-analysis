@@ -49,7 +49,7 @@ download.file(url3,destfile)
 
 ## Read in raw data
 ```{r}
-# Helper function to return indices of dataframe with matching variable code 
+# Returns indices of dataframe with matching variable code for subsetting
 parse = function(data, match){
   vars = grepl(match, data)
   indices = c()
@@ -62,7 +62,7 @@ parse = function(data, match){
 }
 
 ## DELETE THIS WHEN DONE: loading Alex's data for part 2
-## note to all: use temp for cleaning data portion 
+# keeping this here for now for comparison
 temp <- read_csv("hcris_panel_raw.csv")
 
 variable_codes <- read.csv("variable_codes.csv")
@@ -76,10 +76,10 @@ for (i in 1:nrow(variable_codes)){
 # generate variable code keys 
 variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
 
-# fix error in data
+# Fix typo error in data
 variable_codes$key[35] = "S000001001020300"
 
-# regular expression to parse keys 
+# Regular expression to parse keys 
 toMatch = paste(variable_codes$key, collapse = "|")
 
 # Read in all CSVs 
@@ -93,15 +93,10 @@ rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col
 nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 
-## note: checked instructions, probably add in the year later (after merging) 
-#rpt$year = i
-#nmrc$year = i
-#alpha$year = i
-
 nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
 alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
 
-# parse alpha and nmrc data for matching variable codes 
+# Parse alpha and nmrc data for matching variable codes 
 indices = parse(nmrc$key, toMatch)
 nmrc_parsed = nmrc[indices,]
 indices = parse(alpha$key, toMatch)
@@ -112,63 +107,116 @@ assign(nmrc_name, nmrc_parsed)
 assign(alpha_name, alpha_parsed)
 }
 
-# clean up environment
+# Clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name, alpha_parsed, nmrc_parsed)
 ```
 
 ## Reformatting The Raw Data 
 ```{r}
-# given a coded key string, function will return the corresponding variable name 
-rename_key = function(key){
-  for (i in 1:nrow(variable_codes)){
-    if (key == variable_codes$key[i]){
-      return(variable_codes$variable[i])
-      stop()
-    }
-  }
+# Takes a long alpha dataframe, merges variable codes, and returns wide alpha dataframe
+long_to_wide_alpha = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+return(wide)
 }
 
-# merge alpha and nmrc datasets for separate years 
-long_1998 = merge(x = nmrc1998, y = alpha1998, by = "rpt_rec_num")
-long_1999 = merge(x = nmrc1999, y = alpha1999, by = "rpt_rec_num")
-long_2000 = merge(x = nmrc2000, y = alpha2000, by = "rpt_rec_num")
-long_2001 = merge(x = nmrc2001, y = alpha2001, by = "rpt_rec_num")
-long_2002 = merge(x = nmrc2002, y = alpha2002, by = "rpt_rec_num")
-long_2003 = merge(x = nmrc2003, y = alpha2003, by = "rpt_rec_num")
-long_2004 = merge(x = nmrc2004, y = alpha2004, by = "rpt_rec_num")
-long_2005 = merge(x = nmrc2005, y = alpha2005, by = "rpt_rec_num")
-long_2006 = merge(x = nmrc2006, y = alpha2006, by = "rpt_rec_num")
-long_2007 = merge(x = nmrc2007, y = alpha2007, by = "rpt_rec_num")
-long_2008 = merge(x = nmrc2008, y = alpha2008, by = "rpt_rec_num")
-long_2009 = merge(x = nmrc2009, y = alpha2009, by = "rpt_rec_num")
-long_2010 = merge(x = nmrc2010, y = alpha2010, by = "rpt_rec_num")
+# Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
+long_to_wide_nmrc = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
+return(wide)
+}
 
-
-# code chunk here renames all the keys to the corresponding variable name. need to do this? not sure 
+# Generate key to merge variable names into dataframe
 idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
-long_1998$key.x <- dplyr::recode(
-  long_1998$key.x,
-  !!!setNames(as.character(idkey$new), idkey$original)
-)
-long_1998$key.y <- dplyr::recode(
-  long_1998$key.y,
-  !!!setNames(as.character(idkey$new), idkey$original)
-)
 
-### convert long to wide data 
-## note: this line of code below is wrong. still not sure how to reformat long to wide properly 
+# Declare alpha and nmrc lists to iterate through
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003, alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, alpha2010)
+nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, nmrc2010)
 
-wide_1998 = dcast(as.data.table(long_test),rpt_rec_num ~ key.x, value.var = c("itm_val_num"))
+# Convert all years from long to wide 
+for(i in 1998:2010){
+  j = i - 1997
+  nmrc_wide_name = paste("nmrc_wide_", i, sep = '')
+  alpha_wide_name = paste("alpha_wide_", i, sep = '')
+  
+  nmrc_wide = long_to_wide_nmrc(as.data.frame(nmrc_list[j]))
+  alpha_wide = long_to_wide_alpha(as.data.frame(alpha_list[j]))
+  
+  assign(nmrc_wide_name, nmrc_wide)
+  assign(alpha_wide_name, alpha_wide)
+  j = j+1
+}
 
-### add variable "year" for each of the 13 reports 
+# add in missing epo_cost and state columns for 1998 (to match # of columns)
+alpha_wide_1998$state = NA
+alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
+nmrc_wide_1998$epo_cost = NA
+nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
 
+wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, alpha_wide_2010)
 
-### save resulting data as hcris_YEAR.csv
+wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, nmrc_wide_2010)
 
+rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], rpt2010[c(1,13,14)])
+
+# Merge all years 
+for(i in 1998:2010){
+  j = i - 1997
+  merged_year_name = paste("merged", i, sep = '')
+  
+  # mege alpha and nmrcr
+  merged_year = merge(as.data.frame(wide_nmrc_list[j]), as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
+  
+  # merge fy_bgn_dt and fy_end_dt from rpt data
+  merged_year = merge(merged_year, rpt_list[j], by = "rpt_rec_num")
+  
+  # add year variable
+  merged_year$year = i
+  
+  assign(merged_year_name, merged_year)
+  j = j+1
+}
+
+# Write all files to CSVs in hcris_cleaned directory 
+fwrite(merged1998, file = "hcris_cleaned/hcris_1998.csv")
+fwrite(merged1999, file = "hcris_cleaned/hcris_1999.csv")
+fwrite(merged2000, file = "hcris_cleaned/hcris_2000.csv")
+fwrite(merged2001, file = "hcris_cleaned/hcris_2001.csv")
+fwrite(merged2002, file = "hcris_cleaned/hcris_2002.csv")
+fwrite(merged2003, file = "hcris_cleaned/hcris_2003.csv")
+fwrite(merged2004, file = "hcris_cleaned/hcris_2004.csv")
+fwrite(merged2005, file = "hcris_cleaned/hcris_2005.csv")
+fwrite(merged2006, file = "hcris_cleaned/hcris_2006.csv")
+fwrite(merged2007, file = "hcris_cleaned/hcris_2007.csv")
+fwrite(merged2008, file = "hcris_cleaned/hcris_2008.csv")
+fwrite(merged2009, file = "hcris_cleaned/hcris_2009.csv")
+fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
 ```
 
 ## Cleaning The Data
 ```{r}
+hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
+
+for (i in 1999:2010){
+  current = paste("hcris_cleaned/hcris_", i, ".csv", sep = '')
+  to_bind <- read_csv(current, show_col_types = F)
+  hcris_data <- rbind(hcris_data, to_bind)
+}
+
+# Rename report_number and rearrange columns (to match Alex's dataset)
+colnames(hcris_data)[1] = "report_number"
+#hcris_data <- subset(hcris_data, select = c(1:6, 9:26, 7, 27:35, 37:39, 8, 36)) was going to rearrange columns to match Alex, don't think we need to
+hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
+
 # 1
 
 # 2
@@ -225,3 +273,24 @@ temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVIT
 ```{r}
 
 ```
+Questions for Alex 
+1. 1998 merged data: missing epo_cost and state. just declare as NA? 
+length(unique(alpha1998$key)) + length(unique(nmrc1998$key)) == 33
+length(unique(alpha1999$key)) + length(unique(nmrc1999$key)) == 35 (for all other years also)
+
+2. my reformatted data is not exactly equal. Is this a problem? Example output: 
+> all.equal(temp, hcris_data)
+[1] "Attributes: < Names: 1 string mismatch >"                                            
+[2] "Attributes: < Length mismatch: comparison on first 2 components >"                   
+[3] "Attributes: < Component “class”: Lengths (4, 3) differ (string compare on first 3) >"
+[4] "Attributes: < Component “class”: 3 string mismatches >"                              
+[5] "Attributes: < Component 2: target is externalptr, current is numeric >"              
+[6] "Component “zip_code”: 238 string mismatches" 
+
+> temp$zip_code[335]
+[1] "6902"
+> hcris_data$zip_code[335]
+[1] "06902"
+
+Other notes 
+1. epo_code and state missing in 1998 

@@ -18,7 +18,7 @@ library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
 library(stringr)
-#library(zipcodeR)
+library(usa)
 ```
 
 # ============================================
@@ -238,6 +238,7 @@ head(hcris_data)
 
 # 9
 #Remove all trailing and leading white space from data (all variables) 
+
 apply(hcris_data,2,trimws)
 #remove all letters and "-" from zip codes and keep only numbers to create one long zip for ones that need to be fixed this wont change correct ones EX: "Y 11746-1498" goes to "117461498"
  hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
@@ -245,21 +246,36 @@ apply(hcris_data,2,trimws)
  hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
  #make all zips numeric removes leading 0s so not sure what to do ex: 018212 becomes 18212 when as.numeric is used
 
-#checking the # of NA in alex's
-temp%>%
- select(zip_code) %>%
-  length(filter(is.na(zip_code)))
-
-#checking the # of NA in mine
- hcris_data%>%
- select(zip_code) %>%
- filter(is.na(zip_code))
-
-
 
 
 # 10
 
+#imprort data set with zip and state codes
+zips=usa::zipcodes
+#join data sets so state code is matched with all zips
+zips=usa::zipcodes
+zips= zips %>%select("zip","state")
+#joining two data frames together so all zips have a state code
+left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
+  #making renaming the correct state variable
+  mutate(state=state.y) %>%
+  #dropping the other state vars so only left with correct state 
+   select(-state.x, -state.y)
+
+
+
+  
+
+
+
+
+
+ 
+
+
+ 
+ 
+ 
 # 11
 ## what to do about NA values? for now: just removing them here 
 sort(unique(temp$chain_identity))

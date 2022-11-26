@@ -89,7 +89,7 @@ Nick's junk code
 # create keys for alpha and nmrc data
 
 
-
+#hcris_data <- subset(hcris_data, select = c(1:6, 9:26, 7, 27:35, 37:39, 8, 36)) was going to rearrange columns to match Alex, don't think we need to
 
 # merge datasets
 ## vector memory exhausted error? 

@@ -213,10 +213,11 @@ for (i in 1999:2010){
   hcris_data <- rbind(hcris_data, to_bind)
 }
 
-# Rename report_number and rearrange columns (to match Alex's dataset)
+# Trying to match Alex's dataset (besides column ordering, which is slightly different)
 colnames(hcris_data)[1] = "report_number"
-#hcris_data <- subset(hcris_data, select = c(1:6, 9:26, 7, 27:35, 37:39, 8, 36)) was going to rearrange columns to match Alex, don't think we need to
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
+
+head(hcris_data)
 
 # 1
 

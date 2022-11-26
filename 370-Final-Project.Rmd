@@ -256,7 +256,7 @@ zips=usa::zipcodes
 zips=usa::zipcodes
 zips= zips %>%select("zip","state")
 #joining two data frames together so all zips have a state code
-left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
+hcris_data=left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
   #making renaming the correct state variable
   mutate(state=state.y) %>%
   #dropping the other state vars so only left with correct state 
@@ -265,8 +265,10 @@ left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
 #now only obs with missing states are the ones with missing zips
 
 
-  
+  hcris_data %>%
+    filter(prvdr_num==162500)
 
+  
 
 
 

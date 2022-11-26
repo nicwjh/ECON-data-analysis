@@ -248,12 +248,12 @@ apply(hcris_data,2,trimws)
 #checking the # of NA in alex's
 temp%>%
  select(zip_code) %>%
-  filter(is.na(zip_code))
+  length(filter(is.na(zip_code)))
 
 #checking the # of NA in mine
  hcris_data%>%
  select(zip_code) %>%
-  filter(is.na(zip_code))
+ filter(is.na(zip_code))
 
 
 

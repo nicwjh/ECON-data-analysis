@@ -246,7 +246,24 @@ apply(hcris_data,2,trimws)
  hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
  #make all zips numeric removes leading 0s so not sure what to do ex: 018212 becomes 18212 when as.numeric is used
 
+ sum(is.na(hcris_data$zip_code))
+ 
+ hcris_data %>%
+    filter(prvdr_num==162500) %>%
+  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==162500|prvdr_num!=162500)))
 
+tempzip=hcris_data
+
+
+  for(i in unique(tempzip$prvdr_num)){
+   tempzip %>%
+    filter(prvdr_num==i) %>%
+  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i)))
+    rbind(hcris_data,tempzip)
+   
+  }
+#trying to take filled in zips from other years of the same provider number and fill in the years with the NAs
+            
 
 # 10
 
@@ -265,8 +282,8 @@ hcris_data=left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
 #now only obs with missing states are the ones with missing zips
 
 
-  hcris_data %>%
-    filter(prvdr_num==162500)
+
+  
 
   
 

@@ -250,9 +250,9 @@ apply(hcris_data,2,trimws)
 
 # 10
 
-#imprort data set with zip and state codes
+#imprort data set with zip and state codes already in 
 zips=usa::zipcodes
-#join data sets so state code is matched with all zips
+#join data sets by zip code so state code is matched with all zips
 zips=usa::zipcodes
 zips= zips %>%select("zip","state")
 #joining two data frames together so all zips have a state code
@@ -261,6 +261,7 @@ left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
   mutate(state=state.y) %>%
   #dropping the other state vars so only left with correct state 
    select(-state.x, -state.y)
+
 
 
 

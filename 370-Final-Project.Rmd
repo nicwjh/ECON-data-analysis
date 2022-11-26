@@ -245,9 +245,15 @@ apply(hcris_data,2,trimws)
  hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
  #make all zips numeric removes leading 0s so not sure what to do ex: 018212 becomes 18212 when as.numeric is used
 
+#checking the # of NA in alex's
+temp%>%
+ select(zip_code) %>%
+  filter(is.na(zip_code))
 
-
- 
+#checking the # of NA in mine
+ hcris_data%>%
+ select(zip_code) %>%
+  filter(is.na(zip_code))
 
 
 

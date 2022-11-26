@@ -262,7 +262,7 @@ left_join(hcris_data,zips, by=c("zip_code"="zip")) %>%
   #dropping the other state vars so only left with correct state 
    select(-state.x, -state.y)
 
-
+#now only obs with missing states are the ones with missing zips
 
 
   

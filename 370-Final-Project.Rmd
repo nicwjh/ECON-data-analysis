@@ -275,7 +275,7 @@ hcris_data=hcris_dataZipClean
 
 #helper function to pull state codes from zips
 zipz=usa::zipcodes
- zipz
+ 
  
  getstate = function(zipvec){
    codes=c()

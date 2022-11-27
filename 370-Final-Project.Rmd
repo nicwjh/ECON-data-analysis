@@ -66,6 +66,184 @@ assign(alpha_name, alpha)
 # clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 ```
+<<<<<<< Updated upstream
+=======
+
+## Reformatting The Raw Data 
+```{r}
+# Takes a long alpha dataframe, merges variable codes, and returns wide alpha dataframe
+long_to_wide_alpha = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+return(wide)
+}
+
+# Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
+long_to_wide_nmrc = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
+return(wide)
+}
+
+# Generate key to merge variable names into dataframe
+idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
+
+# Declare alpha and nmrc lists to iterate through
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003, alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, alpha2010)
+nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, nmrc2010)
+
+# Convert all years from long to wide 
+for(i in 1998:2010){
+  j = i - 1997
+  nmrc_wide_name = paste("nmrc_wide_", i, sep = '')
+  alpha_wide_name = paste("alpha_wide_", i, sep = '')
+  
+  nmrc_wide = long_to_wide_nmrc(as.data.frame(nmrc_list[j]))
+  alpha_wide = long_to_wide_alpha(as.data.frame(alpha_list[j]))
+  
+  assign(nmrc_wide_name, nmrc_wide)
+  assign(alpha_wide_name, alpha_wide)
+  j = j+1
+}
+
+# add in missing epo_cost and state columns for 1998 (to match # of columns)
+alpha_wide_1998$state = NA
+alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
+nmrc_wide_1998$epo_cost = NA
+nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
+
+wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, alpha_wide_2010)
+
+wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, nmrc_wide_2010)
+
+rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], rpt2010[c(1,13,14)])
+
+# Merge all years 
+for(i in 1998:2010){
+  j = i - 1997
+  merged_year_name = paste("merged", i, sep = '')
+  
+  # mege alpha and nmrcr
+  merged_year = merge(as.data.frame(wide_nmrc_list[j]), as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
+  
+  # merge fy_bgn_dt and fy_end_dt from rpt data
+  merged_year = merge(merged_year, rpt_list[j], by = "rpt_rec_num")
+  
+  # add year variable
+  merged_year$year = i
+  
+  assign(merged_year_name, merged_year)
+  j = j+1
+}
+
+# Write all files to CSVs in hcris_cleaned directory 
+fwrite(merged1998, file = "hcris_cleaned/hcris_1998.csv")
+fwrite(merged1999, file = "hcris_cleaned/hcris_1999.csv")
+fwrite(merged2000, file = "hcris_cleaned/hcris_2000.csv")
+fwrite(merged2001, file = "hcris_cleaned/hcris_2001.csv")
+fwrite(merged2002, file = "hcris_cleaned/hcris_2002.csv")
+fwrite(merged2003, file = "hcris_cleaned/hcris_2003.csv")
+fwrite(merged2004, file = "hcris_cleaned/hcris_2004.csv")
+fwrite(merged2005, file = "hcris_cleaned/hcris_2005.csv")
+fwrite(merged2006, file = "hcris_cleaned/hcris_2006.csv")
+fwrite(merged2007, file = "hcris_cleaned/hcris_2007.csv")
+fwrite(merged2008, file = "hcris_cleaned/hcris_2008.csv")
+fwrite(merged2009, file = "hcris_cleaned/hcris_2009.csv")
+fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
+```
+
+## Cleaning The Data
+```{r}
+hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
+
+# rbind all 13 datasets
+for (i in 1999:2010){
+  current = paste("hcris_cleaned/hcris_", i, ".csv", sep = '')
+  to_bind <- read_csv(current, show_col_types = F)
+  hcris_data <- rbind(hcris_data, to_bind)
+}
+
+# Trying to match Alex's dataset (besides column ordering, which is slightly different)
+colnames(hcris_data)[1] = "report_number"
+hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
+
+head(hcris_data)
+
+# 1
+
+# 2
+
+# 3
+
+# 4
+
+# 5
+
+# 6
+
+hcris_data["prvdr_num"][hcris_data["prvdr_num"] == 322664] <- 342664
+
+# 7
+library(lubridate)
+library(dplyr)
+
+hcris_data = mutate(hcris_data, fy_bgn_dt = mdy(fy_bgn_dt))
+hcris_data = mutate(hcris_data, fy_end_dt = mdy(fy_end_dt))
+hcris_data = mutate(hcris_data, report_start_date = mdy(report_start_date))
+hcris_data = mutate(hcris_data, report_end_date = mdy(report_end_date))
+
+  # pretty sure it's correct, but in alex's directions it says i should have gotten a warning for report_start_data, and i didn't get one soo 
+
+# 8
+
+hcris_data$report_start_date = NULL
+hcris_data$report_end_date = NULL
+
+
+ 
+# 9
+
+# 10
+
+# 11
+## what to do about NA values? for now: just removing them here 
+sort(unique(temp$chain_identity))
+
+# remove observations with chain_indicator == NA | chain_identity == NA
+temp2 = subset(temp, chain_indicator == "Y" | chain_indicator == "N")
+temp3 = subset(temp2,chain_identity != "NA")
+
+temp3$chain_id = 0 # default for chain_indicator == "N"
+
+# initialize chain_indicator variables 
+for(i in 1:nrow(temp3)){
+  if (temp3$chain_indicator[i] == "Y" & temp3$chain_identity[i] != "DAVITA" & temp3$chain_identity[i] != "FRESENIUS" ){
+    temp3$chain_id[i] = 1
+  }
+  else if (temp3$chain_identity[i] == "DAVITA"){
+    temp3$chain_id[i] = 2
+  }
+  else if (temp3$chain_identity[i] == "FRESENIUS"){
+    temp3$chain_id[i] = 3
+  }
+}
+
+## this line of code is not running, chain_identity not found 
+temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVITA"]
+
+# 12
+
+```
+
+>>>>>>> Stashed changes
 # ============================================
 # Question 3 - Analysis 
 # ============================================

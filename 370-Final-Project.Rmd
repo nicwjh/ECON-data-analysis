@@ -19,7 +19,6 @@ library(mvtnorm)
 library(tidyverse)
 library(stringr)
 library(usa)
-library(zipcodeR)
 ```
 
 # ============================================
@@ -275,8 +274,7 @@ hcris_data=hcris_dataZipClean
 
 #helper function to pull state codes from zips
 zipz=usa::zipcodes
- 
- 
+
  getstate = function(zipvec){
    codes=c()
    for (i in zipvec){

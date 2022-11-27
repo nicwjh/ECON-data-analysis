@@ -240,34 +240,61 @@ head(hcris_data)
 # 10
 
 # 11
-## what to do about NA values? for now: just removing them here 
-sort(unique(temp$chain_identity))
 
-# remove observations with chain_indicator == NA | chain_identity == NA
-temp2 = subset(temp, chain_indicator == "Y" | chain_indicator == "N")
-temp3 = subset(temp2,chain_identity != "NA")
+# running unit tests for this portion on hcris_test. will eventually replace hcris_test with hcris_data
+hcris_test = hcris_data 
 
-temp3$chain_id = 0 # default for chain_indicator == "N"
+sort(unique(hcris_test$chain_identity))
 
-# initialize chain_indicator variables 
-for(i in 1:nrow(temp3)){
-  if (temp3$chain_indicator[i] == "Y" & temp3$chain_identity[i] != "DAVITA" & temp3$chain_identity[i] != "FRESENIUS" ){
-    temp3$chain_id[i] = 1
+# Regular expressions for string parsing 
+f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS"
+d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
+
+# declaring new boolean variables so that the loop is more readable 
+hcris_test$is_fresenius = grepl(f_regex, hcris_test$chain_identity, ignore.case = TRUE)
+hcris_test$is_davita = grepl(d_regex, hcris_test$chain_identity, ignore.case = TRUE)
+
+# @ Sophia don't think we need this if we initialize others first. check out how I set up the loop below
+#o_regex = "?!.*(^FER|^FES|^FEN|^FR4E|^FREE|^FREI|^FRES|^FREN|^FREZ|^FRSE|^FRRE|\\bDRESENIUS\\b|^DACITA|^DATIVA|^DAVIATA|^DANITA|^DVITA)"
+
+#set chain_id column default to 0 (includes chain_indicator == "N" and chain_indicator == "NA")
+# @Sophia so we are not subsetting to remove NA anymore. If chain_indicator == "NA", we'll set chain_id to 0 as well
+hcris_test$chain_id = 0
+
+for (i in 1:nrow(hcris_test)){
+  if (hcris_test$is_fresenius[i]){ # Fresenius chain
+    hcris_test$chain_id[i] = 3
+    hcris_test$chain_identity[i] = "Fresenius"
   }
-  else if (temp3$chain_identity[i] == "DAVITA"){
-    temp3$chain_id[i] = 2
+  else if (hcris_test$is_davita[i]){ # Davita chain
+    hcris_test$chain_id[i] = 2
+    hcris_test$chain_identity[i] = "DaVita"
   }
-  else if (temp3$chain_identity[i] == "FRESENIUS"){
-    temp3$chain_id[i] = 3
+  else if (!is.na(hcris_test$chain_indicator[i]) & hcris_test$chain_indicator[i] == "Y" & !is.na(hcris_test$chain_identity[i]) & hcris_test$chain_identity[i] != ""){ # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+    hcris_test$chain_id[i] = 1
+    hcris_test$chain_identity[i] = "Other"
+  }
+  else{ # not Fresenius/Davita/other
+    hcris_test$chain_identity[i] = "Not chain"
   }
 }
 
-## this line of code is not running, chain_identity not found 
-temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVITA"]
 
+## ASK ALEX: why are there some DaVita and Fresenius entries with N for chain_indicator? should be a simple fix if these are meant to be included. Also, what else do we need to do to "clean" the chain variables? More standardizing names?
+## this works for fresenius and davita but not for the others
+#temp3[grepl(f_regex,chain_identity,ignore.case = TRUE),chain_identity := 'FRESENIUS']
+#temp3[grepl(d_regex,chain_identity,ignore.case = TRUE),chain_identity := 'DAVITA']
+## I think the issue with this one is the regex, not sure how I should change it
+#temp3[grepl(o_regex,chain_identity,ignore.case = TRUE),chain_identity := 'OTHER']
+
+## this works to change chain_identity but then sets everything in chain_id to "other"
+#temp3$chain_id[temp3$chain_id == 1] = (temp3$chain_identity[temp3$chain_id == 1] = "OTHER")
+#temp3$chain_id[temp3$chain_id == 2] = (temp3$chain_identity[temp3$chain_id == 2] = "DAVITA")
+#temp3$chain_id[temp3$chain_id == 3] = (temp3$chain_identity[temp3$chain_id == 3] = "FRESENIUS")
 # 12
 
 ```
+
 
 # ============================================
 # Question 3 - Analysis 
@@ -294,5 +321,9 @@ length(unique(alpha1999$key)) + length(unique(nmrc1999$key)) == 35 (for all othe
 > hcris_data$zip_code[335]
 [1] "06902"
 
+3. Cleaning part 11
+check if how we're renaming it is OK 
+
 Other notes 
+
 1. epo_code and state missing in 1998 

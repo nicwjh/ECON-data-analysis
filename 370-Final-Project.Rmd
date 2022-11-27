@@ -296,7 +296,7 @@ hastate=hcris_data %>% filter(is.na(state)==F)
 #combine data sets back together
 hcris_data=rbind(hastate,nostatefixed)
 
-hcris_data
+
 
 # 11
 ## what to do about NA values? for now: just removing them here 

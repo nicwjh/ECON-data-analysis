@@ -259,14 +259,16 @@ hcris_data=as.data.frame(apply(hcris_data,2,trimws))
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
     filter(prvdr_num==i))
     }
-  }
-hcris_data=hcris_dataZipClean
+ }
+ 
+ 
 
-
+ 
 #WARNING LOOP TAKES LONG TIME
 #Taking filled in zips from other years of the same provider number to fill in the years with the NAs of that same provider number but only doing that if there is only 1 zip code for a given provider number otherwise it is ambiguous because they may have moved if there are two zip codes for the same provider over different years. in other words if a provider number has more than one zip assocatied with it, the NA will be left because it is ambiguous 
 #also puts all provider numbers next to eath other in data set over years
 
+# also removes all 40 observations without provider numbers in process 
             
 
 # 10
@@ -322,5 +324,6 @@ for(i in 1:nrow(temp3)){
 temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVITA"]
 
 # 12
+
 
 ```

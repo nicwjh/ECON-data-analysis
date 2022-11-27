@@ -245,7 +245,6 @@ hcris_data=as.data.frame(apply(hcris_data,2,trimws))
  hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
  #take the first 5 digits of long zip, correct ones stay unchanged EX:  "117461498" goes to "11746" which is what we want
  hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
- #make all zips numeric removes leading 0s so not sure what to do ex: 018212 becomes 18212 when as.numeric is used
 
  hcris_dataZipClean=as.data.frame(c())
  for(i in unique(hcris_data$prvdr_num)){

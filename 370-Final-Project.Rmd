@@ -108,91 +108,230 @@ rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
 =======
 ## Cleaning The Data
 ```{r}
-hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
+# Takes a long alpha dataframe, merges variable codes, and returns wide alpha dataframe
+long_to_wide_alpha = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+return(wide)
+}
+# Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
+long_to_wide_nmrc = function(data){
+  data$key <- dplyr::recode(
+  data$key,
+  !!!setNames(as.character(idkey$new), idkey$original)
+)
+setDT(data)
+wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
+return(wide)
+}
+# Generate key to merge variable names into dataframe
+idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
+# Declare alpha and nmrc lists to iterate through
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003, alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, alpha2010)
+nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, nmrc2010)
+# Convert all years from long to wide 
+for(i in 1998:2010){
+  j = i - 1997
+  nmrc_wide_name = paste("nmrc_wide_", i, sep = '')
+  alpha_wide_name = paste("alpha_wide_", i, sep = '')
+  
+  nmrc_wide = long_to_wide_nmrc(as.data.frame(nmrc_list[j]))
+  alpha_wide = long_to_wide_alpha(as.data.frame(alpha_list[j]))
+  
+  assign(nmrc_wide_name, nmrc_wide)
+  assign(alpha_wide_name, alpha_wide)
+  j = j+1
+}
+# add in missing epo_cost and state columns for 1998 (to match # of columns)
+alpha_wide_1998$state = NA
+alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
+nmrc_wide_1998$epo_cost = NA
+nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
+wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, alpha_wide_2010)
+wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, nmrc_wide_2010)
+rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], rpt2010[c(1,13,14)])
+# Merge all years 
+for(i in 1998:2010){
+  j = i - 1997
+  merged_year_name = paste("merged", i, sep = '')
+  
+  # merge alpha and nmrc
+  merged_year = merge(as.data.frame(wide_nmrc_list[j]), as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
+  
+  # merge fy_bgn_dt and fy_end_dt from rpt data
+  merged_year = merge(merged_year, rpt_list[j], by = "rpt_rec_num")
+  
+  # add year variable
+  merged_year$year = i
+  
+  assign(merged_year_name, merged_year)
+  j = j+1
+}
+# Write all files to CSVs in hcris_cleaned directory 
+fwrite(merged1998, file = "hcris_cleaned/hcris_1998.csv")
+fwrite(merged1999, file = "hcris_cleaned/hcris_1999.csv")
+fwrite(merged2000, file = "hcris_cleaned/hcris_2000.csv")
+fwrite(merged2001, file = "hcris_cleaned/hcris_2001.csv")
+fwrite(merged2002, file = "hcris_cleaned/hcris_2002.csv")
+fwrite(merged2003, file = "hcris_cleaned/hcris_2003.csv")
+fwrite(merged2004, file = "hcris_cleaned/hcris_2004.csv")
+fwrite(merged2005, file = "hcris_cleaned/hcris_2005.csv")
+fwrite(merged2006, file = "hcris_cleaned/hcris_2006.csv")
+fwrite(merged2007, file = "hcris_cleaned/hcris_2007.csv")
+fwrite(merged2008, file = "hcris_cleaned/hcris_2008.csv")
+fwrite(merged2009, file = "hcris_cleaned/hcris_2009.csv")
+fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
+```
 
+## Cleaning The Reformatted Data
+```{r}
+hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
 # rbind all 13 datasets
 for (i in 1999:2010){
   current = paste("hcris_cleaned/hcris_", i, ".csv", sep = '')
   to_bind <- read_csv(current, show_col_types = F)
   hcris_data <- rbind(hcris_data, to_bind)
 }
-
-# Trying to match Alex's dataset (besides column ordering, which is slightly different)
+# Rename first column and cast prvdr_num as numeric
 colnames(hcris_data)[1] = "report_number"
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
-
 head(hcris_data)
-
-# 1
-
-# 2
-
-# 3
-
-# 4
-
-# 5
-
-# 6
-
-# 7
-
-# 8
-
-# 9
-
-# 10
-
-# 11
-## what to do about NA values? for now: just removing them here 
-sort(unique(temp$chain_identity))
-
-# remove observations with chain_indicator == NA | chain_identity == NA
-temp2 = subset(temp, chain_indicator == "Y" | chain_indicator == "N")
-temp3 = subset(temp2,chain_identity != "NA")
-temp3 = as.data.table(temp3)
-
-## need to set temp3 as data table
-
-f_regex = "^FER|^FES|^FEN|^FR4E|^FREE|^FREI|^FRES|^FREN|^FREZ|^FRSE|^FRRE|\\bDRESENIUS\\b"
-d_regex = "^DACITA|^DATIVA|^DAVIATA|^DANITA|^DVITA"
-o_regex = "?!.*(^FER|^FES|^FEN|^FR4E|^FREE|^FREI|^FRES|^FREN|^FREZ|^FRSE|^FRRE|\\bDRESENIUS\\b
-            |^DACITA|^DATIVA|^DAVIATA|^DANITA|^DVITA)"
-
-#set chain_id column default to 0
-temp3$chain_id = 0
-
-# initialize chain_indicator variables 
-for(i in 1:nrow(temp3)){
-  if (temp3$chain_indicator[i] == "Y" & (grepl(d_regex, temp3$chain_identity[i], ignore.case = TRUE) == FALSE) &  (grepl(f_regex, temp3$chain_identity[i], ignore.case = TRUE) == FALSE) ){
-    temp3$chain_id[i] = 1
+hcris_test = hcris_data 
+hcris_data = hcris_test
+############# 1 #############
+hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
+############# 2 #############
+hcris_data$epo_cost = abs(hcris_data$epo_cost)
+hcris_data$epo_net_cost = abs(hcris_data$epo_net_cost)
+hcris_data$epo_rebates = abs(hcris_data$epo_rebates)
+############# 3 #############
+hcris_data$epo_rebates[is.na(hcris_data$epo_rebates)] = 0
+############# 4 #############
+##### 4a #####
+indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates == 0 & !is.na(hcris_data$epo_net_cost)
+hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices]
+##### 4b #####
+indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates != 0 & !is.na(hcris_data$epo_net_cost)
+hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices] + hcris_data$epo_rebates[indices]
+##### 4c #####
+hcris_data <- hcris_data %>%
+  mutate(epo_cost = ifelse(is.na(epo_cost) & 
+                             epo_rebates == 0 & 
+                             is.na(epo_net_cost),0,epo_cost),
+         epo_net_cost = ifelse(is.na(epo_cost) & 
+                             epo_rebates == 0 & 
+                             is.na(epo_net_cost),0,epo_net_cost))
+##### 4d - cost data left as missing, nothing to do #####
+##### 4e #####
+indices = !is.na(hcris_data$epo_cost) & is.na(hcris_data$epo_net_cost)
+hcris_data$epo_net_cost[indices] = hcris_data$epo_cost[indices] - hcris_data$epo_rebates[indices]
+############# 5 #############
+hcris_data <- hcris_data %>%
+  mutate(epo_cost = ifelse((epo_cost < epo_net_cost),epo_net_cost,epo_cost),
+         epo_net_cost = ifelse((epo_cost < epo_net_cost),epo_cost,epo_net_cost))
+############# 6 #############
+index = which(hcris_data$prvdr_num == 322664)
+hcris_data$prvdr_num[index] = 342664
+############# 7 #############
+hcris_data = mutate(hcris_data, fy_bgn_dt = mdy(fy_bgn_dt))
+hcris_data = mutate(hcris_data, fy_end_dt = mdy(fy_end_dt))
+hcris_data = mutate(hcris_data, report_start_date = mdy(report_start_date))
+hcris_data = mutate(hcris_data, report_end_date = mdy(report_end_date))
+############# 8 #############
+hcris_data$report_start_date = NULL
+hcris_data$report_end_date = NULL
+############# 9 #############
+##### 9a #####
+# Trim trailing & leading whitespace
+hcris_data=as.data.frame(apply(hcris_data,2,trimws))
+# Remove alphabets and special characters
+hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
+# Trim whitespace again - command above left some zip codes with leading/trailing white space
+hcris_data=as.data.frame(apply(hcris_data,2,trimws))
+# Slice zip codes to first 5 digits of string
+hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
+# Cast to numeric
+hcris_data$zip_code = as.numeric(hcris_data$zip_code)
+##### 9b ##### -- Not checked yet 
+ hcris_dataZipClean=as.data.frame(c())
+ for(i in unique(hcris_data$prvdr_num)){
+  testcase=hcris_data%>%filter(prvdr_num==i) %>%
+   select(zip_code)
+  print(i)
+  if(nrow(unique(na.omit(testcase)))==1){
+    hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
+    filter(prvdr_num==i) %>%
+  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i))))
+    } else{
+    hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
+    filter(prvdr_num==i))
+    }
+ }
+##### 9c ##### -- Not checked yet
+############# 10 ############# -- Not checked yet 
+ 
+#helper function to pull state codes from zips
+zipz=usa::zipcodes
+ getstate = function(zipvec){
+   codes=c()
+   for (i in zipvec){
+     if(is.na(i)==FALSE){
+    Temp= zipz%>% filter(zip.code==i)%>%select(state)
+codes=c(codes,Temp$state[1])
+     }else{
+  codes=c(codes,NA)
+}
+   }
+  codes
+ }
+#separating data set to only fix ones with state missing 
+nostatefixed=hcris_data %>% filter(is.na(state))%>% mutate(state=getstate(zipvec = zip_code))
+hastate=hcris_data %>% filter(is.na(state)==F)
+#combine data sets back together
+hcris_data=rbind(hastate,nostatefixed)
+############# 11 #############
+sort(unique(hcris_data$chain_identity))
+# Regular expressions for string parsing 
+f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS"
+d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
+# Indicator variables for
+hcris_data$is_fresenius = grepl(f_regex, hcris_data$chain_identity, ignore.case = TRUE)
+hcris_data$is_davita = grepl(d_regex, hcris_data$chain_identity, ignore.case = TRUE)
+# Default - chain_indicator == 0 | NA
+hcris_data$chain_id = 0
+for (i in 1:nrow(hcris_data)){
+  if (hcris_data$is_fresenius[i]){ # Fresenius chain
+    hcris_data$chain_id[i] = 3
+    hcris_data$chain_identity[i] = "Fresenius"
   }
-  else if (grepl(d_regex, temp3$chain_identity[i], ignore.case = TRUE) == TRUE){
-    temp3$chain_id[i] = 2
+  else if (hcris_data$is_davita[i]){ # Davita chain
+    hcris_data$chain_id[i] = 2
+    hcris_data$chain_identity[i] = "DaVita"
   }
-  else if (grepl(f_regex, temp3$chain_identity[i], ignore.case = TRUE) == TRUE){
-    temp3$chain_id[i] = 3
+  else if (!is.na(hcris_data$chain_indicator[i]) & hcris_data$chain_indicator[i] == "Y" & !is.na(hcris_data$chain_identity[i]) & hcris_data$chain_identity[i] != ""){ # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+    hcris_data$chain_id[i] = 1
+    hcris_data$chain_identity[i] = "Other"
+  }
+  else{ # not Fresenius/Davita/other
+    hcris_data$chain_identity[i] = "Not chain"
   }
 }
-
-## ASK ALEX: why are there some DaVita and Fresenius entries with N for chain_indicator? should be a simple fix if these are meant to be included. Also, what else do we need to do to "clean" the chain variables? More standardizing names?
-
-## this works for fresenius and davita but not for the others
-temp3[grepl(f_regex,chain_identity,ignore.case = TRUE),chain_identity := 'FRESENIUS']
-temp3[grepl(d_regex,chain_identity,ignore.case = TRUE),chain_identity := 'DAVITA']
-## I think the issue with this one is the regex, not sure how I should change it
-temp3[grepl(o_regex,chain_identity,ignore.case = TRUE),chain_identity := 'OTHER']
-
-## this works to change chain_identity but then sets everything in chain_id to "other"
-#temp3$chain_id[temp3$chain_id == 1] = (temp3$chain_identity[temp3$chain_id == 1] = "OTHER")
-#temp3$chain_id[temp3$chain_id == 2] = (temp3$chain_identity[temp3$chain_id == 2] = "DAVITA")
-#temp3$chain_id[temp3$chain_id == 3] = (temp3$chain_identity[temp3$chain_id == 3] = "FRESENIUS")
-
-
-# 12
+# Drop indicator variables 
+hcris_data$is_fresenius = NULL 
+hcris_data$is_davita = NULL 
+############# 12 #############
+# Q: is this the right way to remake chain_indicator? 
+chains = hcris_data$chain_identity == "Fresenius" | hcris_data$chain_identity == "DaVita" | hcris_data$chain_identity == "Other"
+not_chains = hcris_data$chain_identity == "Not chain"
+hcris_data$chain_indicator[chains] = "Y"
+hcris_data$chain_indicator[not_chains] = "N"
 
 ```
->>>>>>> Stashed changes
+
 
 # ============================================
 # Question 3 - Analysis 

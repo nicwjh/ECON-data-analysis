@@ -261,6 +261,8 @@ hcris_data=as.data.frame(apply(hcris_data,2,trimws))
     }
  }
  
+ hcris_data%>% filter(prvdr_num==12500)%>%select(zip_code)
+  hcris_dataZipClean%>% filter(prvdr_num==12500)%>%select(zip_code)
  
 
  
@@ -324,6 +326,7 @@ for(i in 1:nrow(temp3)){
 temp3[grepl("DAVITA",chain_identity,ignore.case = TRUE),chain_identity := "DAVITA"]
 
 # 12
+
 
 
 ```

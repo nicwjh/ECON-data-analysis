@@ -329,8 +329,7 @@ hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Slice zip codes to first 5 digits of string
 hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
-# Cast to numeric
-hcris_data$zip_code = as.numeric(hcris_data$zip_code)
+
 
 ##### 9b + 9c - Clean zip codes #####
  hcris_dataZipClean=as.data.frame(c())
@@ -346,6 +345,7 @@ hcris_data$zip_code = as.numeric(hcris_data$zip_code)
     filter(prvdr_num==i))
     }
  }
+hcris_data=hcris_dataZipClean
 ```
 
 ### Question 10

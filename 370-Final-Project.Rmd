@@ -64,10 +64,6 @@ parse = function(data, match){
   indices
 }
 
-## DELETE THIS WHEN DONE: loading Alex's data for part 2
-# keeping this here for now for comparison
-temp <- read_csv("hcris_panel_raw.csv")
-
 variable_codes <- read.csv("variable_codes.csv")
 
 # 0 pad lines and columns to match desired character count for key
@@ -223,7 +219,6 @@ hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
 head(hcris_data)
 
 hcris_test = hcris_data 
-hcris_data = hcris_test
 
 ############# 1 #############
 hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
@@ -339,15 +334,20 @@ sort(unique(hcris_data$chain_identity))
 f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS"
 d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
 
-# Indicator variables for
+# Indicator variables for iteration
 hcris_data$is_fresenius = grepl(f_regex, hcris_data$chain_identity, ignore.case = TRUE)
 hcris_data$is_davita = grepl(d_regex, hcris_data$chain_identity, ignore.case = TRUE)
 
-# Default - chain_indicator == 0 | NA
+# Default - chain_indicator == 0 
 hcris_data$chain_id = 0
 
+# indicator == NA f
+
 for (i in 1:nrow(hcris_data)){
-  if (hcris_data$is_fresenius[i]){ # Fresenius chain
+  if (is.na(hcris_data$chain_indicator)){ # indicator NA
+    hcris_data$chain_id = NA
+  }
+  else if (hcris_data$is_fresenius[i]){ # Fresenius chain
     hcris_data$chain_id[i] = 3
     hcris_data$chain_identity[i] = "Fresenius"
   }
@@ -369,12 +369,12 @@ hcris_data$is_fresenius = NULL
 hcris_data$is_davita = NULL 
 
 ############# 12 #############
-
-# Q: is this the right way to remake chain_indicator? 
 chains = hcris_data$chain_identity == "Fresenius" | hcris_data$chain_identity == "DaVita" | hcris_data$chain_identity == "Other"
 not_chains = hcris_data$chain_identity == "Not chain"
+chain_NA = is.na(hcris_data$chain_identity)
 hcris_data$chain_indicator[chains] = "Y"
 hcris_data$chain_indicator[not_chains] = "N"
+hcris_data$chain_indicator[chain_NA] = NA
 
 ```
 
@@ -385,38 +385,9 @@ hcris_data$chain_indicator[not_chains] = "N"
 ```{r}
 
 ```
-Questions for Alex 
-1. 1998 merged data: missing epo_cost and state. just declare as NA? 
-length(unique(alpha1998$key)) + length(unique(nmrc1998$key)) == 33
-length(unique(alpha1999$key)) + length(unique(nmrc1999$key)) == 35 (for all other years also)
 
-2. my reformatted data is not exactly equal. Is this a problem? Example output: 
-> all.equal(temp, hcris_data)
-[1] "Attributes: < Names: 1 string mismatch >"                                            
-[2] "Attributes: < Length mismatch: comparison on first 2 components >"                   
-[3] "Attributes: < Component “class”: Lengths (4, 3) differ (string compare on first 3) >"
-[4] "Attributes: < Component “class”: 3 string mismatches >"                              
-[5] "Attributes: < Component 2: target is externalptr, current is numeric >"              
-[6] "Component “zip_code”: 238 string mismatches" 
-
-> temp$zip_code[335]
-[1] "6902"
-> hcris_data$zip_code[335]
-[1] "06902"
-
-3. Cleaning part 11
-check if how we're renaming it is OK 
-
-
-4. Cleaning part 9
-Link between prvdr_num and zip codes 
-
-5. ASK ALEX: why are there some DaVita and Fresenius entries with N for chain_indicator? should be a simple fix if these are meant to be included. Also, what else do we need to do to "clean" the chain variables? More standardizing names?
-Other notes 
-
-6. Cleaning chain variables - what else to do? 
-1. epo_code and state missing in 1998 
-
-7. Check - how to remake chain_indicator with chain_identity? just replace NAs? 
-
-8. Main concerns: parts 9 - 12 of cleaning 
+1. Jack - If large chains have lower average cost
+Tracking as individual providers change from independent to chain - any variables change? 
+2. Drug dosage with independent to chain 
+3. Sophia - Missing variables + Regression
+3. 

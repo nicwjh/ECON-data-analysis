@@ -217,6 +217,10 @@ fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
 ```
 
 ## Cleaning The Reformatted Data
+
+### Set-up 
+
+rbind 13 reformatted datasets
 ```{r}
 hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
 
@@ -233,19 +237,31 @@ hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
 
 # Take head of fully reformatted data
 head(hcris_data)
+```
 
-############# 1 - Drop observations with missing prvdr_num ############# 
+### Question 1
+Drop observations with missing prvdr_num
+```{r}
 hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
+```
 
-############# 2 - Take absolute value for cost variables #############
+### Question 2
+Take absolute value for cost variables
+```{r}
 hcris_data$epo_cost = abs(hcris_data$epo_cost)
 hcris_data$epo_net_cost = abs(hcris_data$epo_net_cost)
 hcris_data$epo_rebates = abs(hcris_data$epo_rebates)
+```
 
-############# 3 - Replace NAs with 0 for epo_rebates #############
+### Question 3
+Replace NAs with 0 for epo_rebates
+```{r}
 hcris_data$epo_rebates[is.na(hcris_data$epo_rebates)] = 0
+```
 
-############# 4 - Clean epo variables #############
+### Question 4
+Clean epo variables
+```{r}
 ##### 4a - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates == 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices]
@@ -268,27 +284,42 @@ hcris_data <- hcris_data %>%
 ##### 4e - epo_net_cost #####
 indices = !is.na(hcris_data$epo_cost) & is.na(hcris_data$epo_net_cost)
 hcris_data$epo_net_cost[indices] = hcris_data$epo_cost[indices] - hcris_data$epo_rebates[indices]
+```
 
-############# 5 - Switch epo_cost and epo_net_cost for relevant observations #############
+### Question 5
+Switch epo_cost and epo_net_cost for relevant observations
+```{r}
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse((epo_cost < epo_net_cost),epo_net_cost,epo_cost),
          epo_net_cost = ifelse((epo_cost < epo_net_cost),epo_cost,epo_net_cost))
+```
 
-############# 6 - Fix prvdr_num error #############
+### Question 6
+Fix prvdr_num error
+```{r}
 index = which(hcris_data$prvdr_num == 322664)
 hcris_data$prvdr_num[index] = 342664
+```
 
-############# 7 - Clean dates #############
+### Question 7
+Clean dates
+```{r}
 hcris_data = mutate(hcris_data, fy_bgn_dt = mdy(fy_bgn_dt))
 hcris_data = mutate(hcris_data, fy_end_dt = mdy(fy_end_dt))
 hcris_data = mutate(hcris_data, report_start_date = mdy(report_start_date))
 hcris_data = mutate(hcris_data, report_end_date = mdy(report_end_date))
+```
 
-############# 8 - Remove extraneous variables #############
+### Question 8
+Remove extraneous variables
+```{r}
 hcris_data$report_start_date = NULL
 hcris_data$report_end_date = NULL
+```
 
-############# 9 - Clean zip codes #############
+### Question 9 
+Clean zip codes
+```{r}
 ##### 9a - Trim whitespace and get substring #####
 # Trim trailing & leading whitespace
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
@@ -315,9 +346,11 @@ hcris_data$zip_code = as.numeric(hcris_data$zip_code)
     filter(prvdr_num==i))
     }
  }
+```
 
-############# 10 - Clean missing states ############# 
- 
+### Question 10
+Clean missing states
+```{r}
 # Helper function to pull state codes from zips
 zipz=usa::zipcodes
  getstate = function(zipvec){
@@ -339,10 +372,11 @@ hastate=hcris_data %>% filter(is.na(state)==F)
 
 # Combine data sets back together
 hcris_data=rbind(hastate,nostatefixed)
+```
 
-############# 11 - Cleaning chain_identity #############
-sort(unique(hcris_data$chain_identity))
-
+### Question 11
+Cleaning chain_identity
+```{r}
 # Regular expressions for string parsing 
 f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS|^\\bDRES\\B"
 d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
@@ -385,9 +419,11 @@ for (i in 1:nrow(hcris_data)){
 # Drop indicator variables 
 hcris_data$is_fresenius = NULL 
 hcris_data$is_davita = NULL 
+```
 
-############# 12 - Remake chain_indicator #############
-
+### Question 12
+Remake chain_indicator
+```{r}
 # Get indices
 chains = hcris_data$chain_identity == "Fresenius" | 
   hcris_data$chain_identity == "DaVita" | 

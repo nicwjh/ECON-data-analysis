@@ -72,7 +72,7 @@ for (i in 1:nrow(variable_codes)){
   variable_codes$column[i] = str_pad(variable_codes$column[i], 4, pad = "0")
 }
 
-# generate variable code keys 
+# Generate variable code keys 
 variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
 
 # Fix typo error in data
@@ -84,26 +84,27 @@ toMatch = paste(variable_codes$key, collapse = "|")
 # Read in all CSVs 
 for (i in 1998:2010){
   
-rpt_name = paste("rpt", i, sep = '')
-nmrc_name = paste("nmrc", i, sep = '')
-alpha_name = paste("alpha", i, sep = '')
+  rpt_name = paste("rpt", i, sep = '')
+  nmrc_name = paste("nmrc", i, sep = '')
+  alpha_name = paste("alpha", i, sep = '')
 
-rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
-nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
-alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+  rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
+  nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+  alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
 
-nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
-alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
+  nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
+  alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
 
-# Parse alpha and nmrc data for matching variable codes 
-indices = parse(nmrc$key, toMatch)
-nmrc_parsed = nmrc[indices,]
-indices = parse(alpha$key, toMatch)
-alpha_parsed = alpha[indices,]
+  # Parse alpha and nmrc data for matching variable codes 
+  indices = parse(nmrc$key, toMatch)
+  nmrc_parsed = nmrc[indices,]
+  indices = parse(alpha$key, toMatch)
+  alpha_parsed = alpha[indices,]
 
-assign(rpt_name, rpt)
-assign(nmrc_name, nmrc_parsed)
-assign(alpha_name, alpha_parsed)
+  assign(rpt_name, rpt)
+  assign(nmrc_name, nmrc_parsed)
+  assign(alpha_name, alpha_parsed)
+  
 }
 
 # Clean up environment
@@ -118,9 +119,9 @@ long_to_wide_alpha = function(data){
   data$key,
   !!!setNames(as.character(idkey$new), idkey$original)
 )
-setDT(data)
-wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
-return(wide)
+  setDT(data)
+  wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+  return(wide)
 }
 
 # Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
@@ -129,19 +130,23 @@ long_to_wide_nmrc = function(data){
   data$key,
   !!!setNames(as.character(idkey$new), idkey$original)
 )
-setDT(data)
-wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
-return(wide)
+  setDT(data)
+  wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
+  return(wide)
 }
 
 # Generate key to merge variable names into dataframe
 idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
 
 # Declare alpha and nmrc lists to iterate through
-alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003, alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, alpha2010)
-nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, nmrc2010)
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
+                  alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, 
+                  alpha2010)
+nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, 
+                 nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, 
+                 nmrc2010)
 
-# Convert all years from long to wide 
+# Convert data from all years from long to wide 
 for(i in 1998:2010){
   j = i - 1997
   nmrc_wide_name = paste("nmrc_wide_", i, sep = '')
@@ -155,17 +160,26 @@ for(i in 1998:2010){
   j = j+1
 }
 
-# add in missing epo_cost and state columns for 1998 (to match # of columns)
+# Add in missing epo_cost and state columns for 1998 (to match # of columns)
 alpha_wide_1998$state = NA
 alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
 nmrc_wide_1998$epo_cost = NA
 nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
 
-wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, alpha_wide_2010)
+wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, 
+                       alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, 
+                       alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, 
+                       alpha_wide_2010)
 
-wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, nmrc_wide_2010)
+wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, 
+                      nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, 
+                      nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, 
+                      nmrc_wide_2010)
 
-rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], rpt2010[c(1,13,14)])
+rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], 
+                rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], 
+                rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], 
+                rpt2010[c(1,13,14)])
 
 # Merge all years 
 for(i in 1998:2010){
@@ -173,7 +187,8 @@ for(i in 1998:2010){
   merged_year_name = paste("merged", i, sep = '')
   
   # merge alpha and nmrc
-  merged_year = merge(as.data.frame(wide_nmrc_list[j]), as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
+  merged_year = merge(as.data.frame(wide_nmrc_list[j]), 
+                      as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
   
   # merge fy_bgn_dt and fy_end_dt from rpt data
   merged_year = merge(merged_year, rpt_list[j], by = "rpt_rec_num")
@@ -216,31 +231,27 @@ for (i in 1999:2010){
 colnames(hcris_data)[1] = "report_number"
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
 
-head(hcris_data)
-
-hcris_test = hcris_data 
-
-############# 1 #############
+############# 1 - Drop observations with missing prvdr_num ############# 
 hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
 
-############# 2 #############
+############# 2 - Take absolute value for cost variables #############
 hcris_data$epo_cost = abs(hcris_data$epo_cost)
 hcris_data$epo_net_cost = abs(hcris_data$epo_net_cost)
 hcris_data$epo_rebates = abs(hcris_data$epo_rebates)
 
-############# 3 #############
+############# 3 - Replace NAs with 0 for epo_rebates #############
 hcris_data$epo_rebates[is.na(hcris_data$epo_rebates)] = 0
 
-############# 4 #############
-##### 4a #####
+############# 4 - Clean epo variables #############
+##### 4a - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates == 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices]
 
-##### 4b #####
+##### 4b - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates != 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices] + hcris_data$epo_rebates[indices]
 
-##### 4c #####
+##### 4c - epo_cost and epo_net_cost #####
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse(is.na(epo_cost) & 
                              epo_rebates == 0 & 
@@ -249,33 +260,33 @@ hcris_data <- hcris_data %>%
                              epo_rebates == 0 & 
                              is.na(epo_net_cost),0,epo_net_cost))
 
-##### 4d - cost data left as missing, nothing to do #####
+##### 4d - Cost data left as missing, nothing to do #####
 
-##### 4e #####
+##### 4e - epo_net_cost #####
 indices = !is.na(hcris_data$epo_cost) & is.na(hcris_data$epo_net_cost)
 hcris_data$epo_net_cost[indices] = hcris_data$epo_cost[indices] - hcris_data$epo_rebates[indices]
 
-############# 5 #############
+############# 5 - Switch epo_cost and epo_net_cost for relevant observations #############
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse((epo_cost < epo_net_cost),epo_net_cost,epo_cost),
          epo_net_cost = ifelse((epo_cost < epo_net_cost),epo_cost,epo_net_cost))
 
-############# 6 #############
+############# 6 - Fix prvdr_num error #############
 index = which(hcris_data$prvdr_num == 322664)
 hcris_data$prvdr_num[index] = 342664
 
-############# 7 #############
+############# 7 - Clean dates #############
 hcris_data = mutate(hcris_data, fy_bgn_dt = mdy(fy_bgn_dt))
 hcris_data = mutate(hcris_data, fy_end_dt = mdy(fy_end_dt))
 hcris_data = mutate(hcris_data, report_start_date = mdy(report_start_date))
 hcris_data = mutate(hcris_data, report_end_date = mdy(report_end_date))
 
-############# 8 #############
+############# 8 - Remove extraneous variables #############
 hcris_data$report_start_date = NULL
 hcris_data$report_end_date = NULL
 
-############# 9 #############
-##### 9a #####
+############# 9 - Clean zip codes #############
+##### 9a - Trim whitespace and get substring #####
 # Trim trailing & leading whitespace
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Remove alphabets and special characters
@@ -287,12 +298,11 @@ hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
 # Cast to numeric
 hcris_data$zip_code = as.numeric(hcris_data$zip_code)
 
-##### 9b ##### -- Not checked yet 
+##### 9b + 9c - Clean zip codes #####
  hcris_dataZipClean=as.data.frame(c())
  for(i in unique(hcris_data$prvdr_num)){
   testcase=hcris_data%>%filter(prvdr_num==i) %>%
    select(zip_code)
-  print(i)
   if(nrow(unique(na.omit(testcase)))==1){
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
     filter(prvdr_num==i) %>%
@@ -303,11 +313,9 @@ hcris_data$zip_code = as.numeric(hcris_data$zip_code)
     }
  }
 
-##### 9c ##### -- Not checked yet
-
-############# 10 ############# -- Not checked yet 
+############# 10 - Clean missing states ############# 
  
-#helper function to pull state codes from zips
+# Helper function to pull state codes from zips
 zipz=usa::zipcodes
  getstate = function(zipvec){
    codes=c()
@@ -321,13 +329,15 @@ codes=c(codes,Temp$state[1])
    }
   codes
  }
-#separating data set to only fix ones with state missing 
+ 
+# Separating data set to only fix ones with state missing 
 nostatefixed=hcris_data %>% filter(is.na(state))%>% mutate(state=getstate(zipvec = zip_code))
 hastate=hcris_data %>% filter(is.na(state)==F)
-#combine data sets back together
+
+# Combine data sets back together
 hcris_data=rbind(hastate,nostatefixed)
 
-############# 11 #############
+############# 11 - Cleaning chain_identity #############
 sort(unique(hcris_data$chain_identity))
 
 # Regular expressions for string parsing 
@@ -338,28 +348,33 @@ d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
 hcris_data$is_fresenius = grepl(f_regex, hcris_data$chain_identity, ignore.case = TRUE)
 hcris_data$is_davita = grepl(d_regex, hcris_data$chain_identity, ignore.case = TRUE)
 
-# Default - chain_indicator == 0 
+# Default - when chain_indicator == 0 (not chain)
 hcris_data$chain_id = 0
 
-# indicator == NA f
-
+# Iterate through data to clean chain_identity
 for (i in 1:nrow(hcris_data)){
-  if (is.na(hcris_data$chain_indicator)){ # indicator NA
-    hcris_data$chain_id = NA
+  if (is.na(hcris_data$chain_identity[i])){ 
+    hcris_data$chain_id[i] = NA
   }
-  else if (hcris_data$is_fresenius[i]){ # Fresenius chain
+  # Fresenius chain
+  else if (hcris_data$is_fresenius[i]){ 
     hcris_data$chain_id[i] = 3
     hcris_data$chain_identity[i] = "Fresenius"
   }
-  else if (hcris_data$is_davita[i]){ # Davita chain
+  # Davita chain
+  else if (hcris_data$is_davita[i]){ 
     hcris_data$chain_id[i] = 2
     hcris_data$chain_identity[i] = "DaVita"
   }
-  else if (!is.na(hcris_data$chain_indicator[i]) & hcris_data$chain_indicator[i] == "Y" & !is.na(hcris_data$chain_identity[i]) & hcris_data$chain_identity[i] != ""){ # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+  # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+  else if (!is.na(hcris_data$chain_indicator[i]) 
+           & hcris_data$chain_indicator[i] == "Y" & 
+           !is.na(hcris_data$chain_identity[i]) & 
+           hcris_data$chain_identity[i] != ""){ 
     hcris_data$chain_id[i] = 1
     hcris_data$chain_identity[i] = "Other"
   }
-  else{ # not Fresenius/Davita/other
+  else{ # not Fresenius/Davita/other (chain_id == 0)
     hcris_data$chain_identity[i] = "Not chain"
   }
 }
@@ -368,16 +383,22 @@ for (i in 1:nrow(hcris_data)){
 hcris_data$is_fresenius = NULL 
 hcris_data$is_davita = NULL 
 
-############# 12 #############
-chains = hcris_data$chain_identity == "Fresenius" | hcris_data$chain_identity == "DaVita" | hcris_data$chain_identity == "Other"
+############# 12 - Remake chain_indicator #############
+
+# Get indices
+chains = hcris_data$chain_identity == "Fresenius" | 
+  hcris_data$chain_identity == "DaVita" | 
+  hcris_data$chain_identity == "Other"
+
 not_chains = hcris_data$chain_identity == "Not chain"
+
 chain_NA = is.na(hcris_data$chain_identity)
+
+# Remake chain_indicator variable
 hcris_data$chain_indicator[chains] = "Y"
 hcris_data$chain_indicator[not_chains] = "N"
 hcris_data$chain_indicator[chain_NA] = NA
-
 ```
-
 
 # ============================================
 # Question 3 - Analysis 
@@ -385,13 +406,3 @@ hcris_data$chain_indicator[chain_NA] = NA
 ```{r}
 
 ```
-
-<<<<<<< HEAD
-1. Jack - If large chains have lower average cost
-Tracking as individual providers change from independent to chain - any variables change? 
-2. Drug dosage with independent to chain 
-3. Sophia - Missing variables + Regression
-3. 
-=======
-8. Main concerns: parts 9 - 12 of cleaning 
->>>>>>> 0efaec978629dd7aa0d9a95a9cb1834397c1258e

@@ -231,6 +231,9 @@ for (i in 1999:2010){
 colnames(hcris_data)[1] = "report_number"
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
 
+# Take head of fully reformatted data
+head(hcris_data)
+
 ############# 1 - Drop observations with missing prvdr_num ############# 
 hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
 
@@ -398,6 +401,9 @@ chain_NA = is.na(hcris_data$chain_identity)
 hcris_data$chain_indicator[chains] = "Y"
 hcris_data$chain_indicator[not_chains] = "N"
 hcris_data$chain_indicator[chain_NA] = NA
+
+# Take head of fully cleaned data
+head(hcris_data)
 ```
 
 # ============================================

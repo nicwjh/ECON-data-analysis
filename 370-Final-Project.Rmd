@@ -336,7 +336,7 @@ hcris_data=rbind(hastate,nostatefixed)
 sort(unique(hcris_data$chain_identity))
 
 # Regular expressions for string parsing 
-f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS"
+f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS|^\\bDRES\\B"
 d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
 
 # Indicator variables for

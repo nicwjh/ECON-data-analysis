@@ -1,12 +1,11 @@
 ---
-title: "ECON 370 Final Project"
+title: "ECON 370 Final Project - Group 1"
 author: 'SD:2, 5, 17, 19, 28' 
 date: "2022-11-8"
 output:
   word_document: default
   pdf_document: default
 ---
-#test again
 # ============================================
 # Set-up
 # ============================================
@@ -14,19 +13,23 @@ output:
 library(readr)
 library(mosaic)
 library(data.table)
-install.packages("xlsx")
-library('xlsx')
+library("xlsx")
 library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
+library(stringr)
+library(lubridate)
+library(dplyr)
+library(usa)
 ```
+
 # ============================================
 # Question 1 - Download Data
 # ============================================
 
-Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the "switch" in our code).
+Note: r eval = FALSE prevents code chunk from running when data is already downloaded (the required "switch" in our code).
 Delete eval = FALSE for first run of code to download files.
-```{r, eval=FALSE} 
+```{r eval=FALSE} 
 for (i in 1998:2010){
   
 url1 <- paste("http://www.nber.org/hcris/265-94/rnl_rpt265_94_", i , ".csv",sep = '')
@@ -38,7 +41,8 @@ download.file(url1,destfile)
 destfile <- paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = '')
 download.file(url2,destfile)
 destfile <- paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = '')
-download.file(url2,destfile)
+download.file(url3,destfile)
+
 }
 ```
 
@@ -46,67 +50,57 @@ download.file(url2,destfile)
 # Question 2 - Cleaning The Data
 # ============================================
 
+## Read in raw data
 ```{r}
-# Read in all CSVs
+# Returns indices of dataframe with matching variable code for subsetting
+parse = function(data, match){
+  vars = grepl(match, data)
+  indices = c()
+  for (i in 1:length(vars)){
+    if (vars[i]){
+      indices = c(indices,i)
+    }
+  }
+  indices
+}
+variable_codes <- read.csv("variable_codes.csv")
+# 0 pad lines and columns to match desired character count for key
+for (i in 1:nrow(variable_codes)){
+  variable_codes$line[i] = str_pad(variable_codes$line[i], 5, pad = "0")
+  variable_codes$column[i] = str_pad(variable_codes$column[i], 4, pad = "0")
+}
+# Generate variable code keys 
+variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
+# Fix typo error in data
+variable_codes$key[35] = "S000001001020300"
+# Regular expression to parse keys 
+toMatch = paste(variable_codes$key, collapse = "|")
+# Read in all CSVs 
 for (i in 1998:2010){
   
-rpt_name = paste("rpt", i, sep = '')
-nmrc_name = paste("nmrc", i, sep = '')
-alpha_name = paste("alpha", i, sep = '')
-
-rpt <- read_csv(paste("./hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
-nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
-alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
-
-rpt$year = i
-nmrc$year = i
-alpha$year = i
-
-#this code drops extra zeros
-alpha$line_num = gsub("^0+","",alpha$line_num)
-alpha$clmn_num = gsub("^0+","",alpha$clmn_num)
-
-nmrc$line_num = gsub("^0+","",nmrc$line_num)
-nmrc$clmn_num = gsub("^0+","",nmrc$clmn_num)
-
-#now keys are correct here
-nmrc$key = paste0(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num)
-alpha$key = paste0(alpha$wksht_cd, alpha$line_num, alpha$clmn_num)
-
-assign(rpt_name, rpt)
-assign(nmrc_name, nmrc)
-assign(alpha_name, alpha)
+  rpt_name = paste("rpt", i, sep = '')
+  nmrc_name = paste("nmrc", i, sep = '')
+  alpha_name = paste("alpha", i, sep = '')
+  rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
+  nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+  alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
+  nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
+  alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
+  # Parse alpha and nmrc data for matching variable codes 
+  indices = parse(nmrc$key, toMatch)
+  nmrc_parsed = nmrc[indices,]
+  indices = parse(alpha$key, toMatch)
+  alpha_parsed = alpha[indices,]
+  assign(rpt_name, rpt)
+  assign(nmrc_name, nmrc_parsed)
+  assign(alpha_name, alpha_parsed)
+  
 }
-
-
-variable_codes = read.csv("variable_codes.csv")
-variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
-
-#drop ids not in variables.csv using a %in% b bool, loop
-alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
-              alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009,
-              alpha2010)
-
-nrmc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003,
-             nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009,
-             nmrc2010)
-
-#this gets list of trues and falses that I think are correct
-alpha2000$key %in% variable_codes$key
-#use this to drop falses?
-
-#dcast to convert L to W individually then merge, unit of obs should be report after this
-
-# clean up environment
-rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name)
-
-
-
+# Clean up environment
+rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name, alpha_parsed, nmrc_parsed)
 ```
 
-<<<<<<< Updated upstream
-=======
-## Cleaning The Data
+## Reformatting The Raw Data 
 ```{r}
 # Takes a long alpha dataframe, merges variable codes, and returns wide alpha dataframe
 long_to_wide_alpha = function(data){
@@ -114,9 +108,9 @@ long_to_wide_alpha = function(data){
   data$key,
   !!!setNames(as.character(idkey$new), idkey$original)
 )
-setDT(data)
-wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
-return(wide)
+  setDT(data)
+  wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
+  return(wide)
 }
 # Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
 long_to_wide_nmrc = function(data){
@@ -124,16 +118,20 @@ long_to_wide_nmrc = function(data){
   data$key,
   !!!setNames(as.character(idkey$new), idkey$original)
 )
-setDT(data)
-wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
-return(wide)
+  setDT(data)
+  wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
+  return(wide)
 }
 # Generate key to merge variable names into dataframe
 idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
 # Declare alpha and nmrc lists to iterate through
-alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003, alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, alpha2010)
-nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, nmrc2010)
-# Convert all years from long to wide 
+alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
+                  alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, 
+                  alpha2010)
+nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, 
+                 nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, 
+                 nmrc2010)
+# Convert data from all years from long to wide 
 for(i in 1998:2010){
   j = i - 1997
   nmrc_wide_name = paste("nmrc_wide_", i, sep = '')
@@ -146,21 +144,31 @@ for(i in 1998:2010){
   assign(alpha_wide_name, alpha_wide)
   j = j+1
 }
-# add in missing epo_cost and state columns for 1998 (to match # of columns)
+# Add in missing epo_cost and state columns for 1998 (to match # of columns)
 alpha_wide_1998$state = NA
 alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
 nmrc_wide_1998$epo_cost = NA
 nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
-wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, alpha_wide_2010)
-wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, nmrc_wide_2010)
-rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], rpt2010[c(1,13,14)])
+wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, 
+                       alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, 
+                       alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, 
+                       alpha_wide_2010)
+wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, 
+                      nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, 
+                      nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, 
+                      nmrc_wide_2010)
+rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], 
+                rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], 
+                rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], 
+                rpt2010[c(1,13,14)])
 # Merge all years 
 for(i in 1998:2010){
   j = i - 1997
   merged_year_name = paste("merged", i, sep = '')
   
   # merge alpha and nmrc
-  merged_year = merge(as.data.frame(wide_nmrc_list[j]), as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
+  merged_year = merge(as.data.frame(wide_nmrc_list[j]), 
+                      as.data.frame(wide_alpha_list[j]), by = "rpt_rec_num")
   
   # merge fy_bgn_dt and fy_end_dt from rpt data
   merged_year = merge(merged_year, rpt_list[j], by = "rpt_rec_num")
@@ -188,6 +196,10 @@ fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
 ```
 
 ## Cleaning The Reformatted Data
+
+### Set-up 
+
+rbind 13 reformatted datasets
 ```{r}
 hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
 # rbind all 13 datasets
@@ -199,25 +211,40 @@ for (i in 1999:2010){
 # Rename first column and cast prvdr_num as numeric
 colnames(hcris_data)[1] = "report_number"
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
+# Take head of fully reformatted data
 head(hcris_data)
-hcris_test = hcris_data 
-hcris_data = hcris_test
-############# 1 #############
+```
+
+### Question 1
+Drop observations with missing prvdr_num
+```{r}
 hcris_data <- hcris_data[complete.cases(hcris_data$prvdr_num), ]
-############# 2 #############
+```
+
+### Question 2
+Take absolute value for cost variables
+```{r}
 hcris_data$epo_cost = abs(hcris_data$epo_cost)
 hcris_data$epo_net_cost = abs(hcris_data$epo_net_cost)
 hcris_data$epo_rebates = abs(hcris_data$epo_rebates)
-############# 3 #############
+```
+
+### Question 3
+Replace NAs with 0 for epo_rebates
+```{r}
 hcris_data$epo_rebates[is.na(hcris_data$epo_rebates)] = 0
-############# 4 #############
-##### 4a #####
+```
+
+### Question 4
+Clean epo variables
+```{r}
+##### 4a - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates == 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices]
-##### 4b #####
+##### 4b - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates != 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices] + hcris_data$epo_rebates[indices]
-##### 4c #####
+##### 4c - epo_cost and epo_net_cost #####
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse(is.na(epo_cost) & 
                              epo_rebates == 0 & 
@@ -225,27 +252,47 @@ hcris_data <- hcris_data %>%
          epo_net_cost = ifelse(is.na(epo_cost) & 
                              epo_rebates == 0 & 
                              is.na(epo_net_cost),0,epo_net_cost))
-##### 4d - cost data left as missing, nothing to do #####
-##### 4e #####
+##### 4d - Cost data left as missing, nothing to do #####
+##### 4e - epo_net_cost #####
 indices = !is.na(hcris_data$epo_cost) & is.na(hcris_data$epo_net_cost)
 hcris_data$epo_net_cost[indices] = hcris_data$epo_cost[indices] - hcris_data$epo_rebates[indices]
-############# 5 #############
+```
+
+### Question 5
+Switch epo_cost and epo_net_cost for relevant observations
+```{r}
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse((epo_cost < epo_net_cost),epo_net_cost,epo_cost),
          epo_net_cost = ifelse((epo_cost < epo_net_cost),epo_cost,epo_net_cost))
-############# 6 #############
+```
+
+### Question 6
+Fix prvdr_num error
+```{r}
 index = which(hcris_data$prvdr_num == 322664)
 hcris_data$prvdr_num[index] = 342664
-############# 7 #############
+```
+
+### Question 7
+Clean dates
+```{r}
 hcris_data = mutate(hcris_data, fy_bgn_dt = mdy(fy_bgn_dt))
 hcris_data = mutate(hcris_data, fy_end_dt = mdy(fy_end_dt))
 hcris_data = mutate(hcris_data, report_start_date = mdy(report_start_date))
 hcris_data = mutate(hcris_data, report_end_date = mdy(report_end_date))
-############# 8 #############
+```
+
+### Question 8
+Remove extraneous variables
+```{r}
 hcris_data$report_start_date = NULL
 hcris_data$report_end_date = NULL
-############# 9 #############
-##### 9a #####
+```
+
+### Question 9 
+Clean zip codes
+```{r}
+##### 9a - Trim whitespace and get substring #####
 # Trim trailing & leading whitespace
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Remove alphabets and special characters
@@ -254,14 +301,11 @@ hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Slice zip codes to first 5 digits of string
 hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
-# Cast to numeric
-hcris_data$zip_code = as.numeric(hcris_data$zip_code)
-##### 9b ##### -- Not checked yet 
+##### 9b + 9c - Clean zip codes #####
  hcris_dataZipClean=as.data.frame(c())
  for(i in unique(hcris_data$prvdr_num)){
   testcase=hcris_data%>%filter(prvdr_num==i) %>%
    select(zip_code)
-  print(i)
   if(nrow(unique(na.omit(testcase)))==1){
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
     filter(prvdr_num==i) %>%
@@ -271,10 +315,13 @@ hcris_data$zip_code = as.numeric(hcris_data$zip_code)
     filter(prvdr_num==i))
     }
  }
-##### 9c ##### -- Not checked yet
-############# 10 ############# -- Not checked yet 
- 
-#helper function to pull state codes from zips
+hcris_data=hcris_dataZipClean
+```
+
+### Question 10
+Clean missing states
+```{r}
+# Helper function to pull state codes from zips
 zipz=usa::zipcodes
  getstate = function(zipvec){
    codes=c()
@@ -288,51 +335,161 @@ codes=c(codes,Temp$state[1])
    }
   codes
  }
-#separating data set to only fix ones with state missing 
+ 
+# Separating data set to only fix ones with state missing 
 nostatefixed=hcris_data %>% filter(is.na(state))%>% mutate(state=getstate(zipvec = zip_code))
 hastate=hcris_data %>% filter(is.na(state)==F)
-#combine data sets back together
+# Combine data sets back together
 hcris_data=rbind(hastate,nostatefixed)
-############# 11 #############
-sort(unique(hcris_data$chain_identity))
+```
+
+### Question 11
+Cleaning chain_identity
+```{r}
 # Regular expressions for string parsing 
-f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS"
+f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS|^\\bDRES\\B"
 d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
-# Indicator variables for
+# Indicator variables for iteration
 hcris_data$is_fresenius = grepl(f_regex, hcris_data$chain_identity, ignore.case = TRUE)
 hcris_data$is_davita = grepl(d_regex, hcris_data$chain_identity, ignore.case = TRUE)
-# Default - chain_indicator == 0 | NA
+# Default - when chain_indicator == 0 (not chain)
 hcris_data$chain_id = 0
+# Iterate through data to clean chain_identity
 for (i in 1:nrow(hcris_data)){
-  if (hcris_data$is_fresenius[i]){ # Fresenius chain
+  if (is.na(hcris_data$chain_identity[i])){ 
+    hcris_data$chain_id[i] = NA
+  }
+  # Fresenius chain
+  else if (hcris_data$is_fresenius[i]){ 
     hcris_data$chain_id[i] = 3
     hcris_data$chain_identity[i] = "Fresenius"
   }
-  else if (hcris_data$is_davita[i]){ # Davita chain
+  # Davita chain
+  else if (hcris_data$is_davita[i]){ 
     hcris_data$chain_id[i] = 2
     hcris_data$chain_identity[i] = "DaVita"
   }
-  else if (!is.na(hcris_data$chain_indicator[i]) & hcris_data$chain_indicator[i] == "Y" & !is.na(hcris_data$chain_identity[i]) & hcris_data$chain_identity[i] != ""){ # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+  # not Fresenius or Davita, but has a chain indicator/non-empty chain_identity (other)
+  else if (!is.na(hcris_data$chain_indicator[i]) 
+           & hcris_data$chain_indicator[i] == "Y" & 
+           !is.na(hcris_data$chain_identity[i]) & 
+           hcris_data$chain_identity[i] != ""){ 
     hcris_data$chain_id[i] = 1
     hcris_data$chain_identity[i] = "Other"
   }
-  else{ # not Fresenius/Davita/other
+  else{ # not Fresenius/Davita/other (chain_id == 0)
     hcris_data$chain_identity[i] = "Not chain"
   }
 }
 # Drop indicator variables 
 hcris_data$is_fresenius = NULL 
 hcris_data$is_davita = NULL 
-############# 12 #############
-# Q: is this the right way to remake chain_indicator? 
-chains = hcris_data$chain_identity == "Fresenius" | hcris_data$chain_identity == "DaVita" | hcris_data$chain_identity == "Other"
+```
+
+### Question 12
+Remake chain_indicator
+```{r}
+# Get indices
+chains = hcris_data$chain_identity == "Fresenius" | 
+  hcris_data$chain_identity == "DaVita" | 
+  hcris_data$chain_identity == "Other"
 not_chains = hcris_data$chain_identity == "Not chain"
+chain_NA = is.na(hcris_data$chain_identity)
+# Remake chain_indicator variable
 hcris_data$chain_indicator[chains] = "Y"
 hcris_data$chain_indicator[not_chains] = "N"
-#test hi
+hcris_data$chain_indicator[chain_NA] = NA
+# Take head of fully cleaned data
+head(hcris_data)
 ```
+
 
 
 # ============================================
 # Question 3 - Analysis 
 # ============================================
+
+Examining Total Cost (Or lab services cost?), Chain vs. Not Chain
+```{r}
+#THIS CODE IS WRONG BUT I AM GOING TO OFFICE HOURS 9am FRI TO DO THIS WITH ALEX
+#omitting NAs in hcris_data
+hcris_noNA = na.omit(hcris_data)
+
+hcris_noNA$epo_cost = as.numeric(hcris_noNA$total_costs_hd_labs)
+
+#subset based on chain or not chain
+hcris_chain_noNA = subset(hcris_noNA, chain_indicator == "Y")
+hcris_not_chain_noNA = subset(hcris_noNA, chain_indicator == "N")
+
+as.numeric(hcris_chain_noNA$total_costs_hd_labs)
+
+#mean() wasn't working for some reason so got mean from this output
+t.test(hcris_chain_noNA$total_costs_hd_labs, mu = 1000, alternative = "two.sided")
+#mean = 555680.8 
+
+t.test(hcris_not_chain_noNA$total_costs_hd_labs, mu = 555680.8, alternative = "greater")
+```
+# Analysis Main Points -- Ellis turning this into paragraph
+- Assuming this variable captures average lab expenditure for the entire firm, could be higher or lower for chains based on:
+  - could be higher because of increased dosage seen in chains as explained in the paper
+  - could be lower because chains have the ability to cut costs with larger-scale supply options (not sure if this is exactly the right way to word this, check in paper)
+
+Feel free to follow this outline, or just write as you see fit: 
+
+Sample sentence for analysis: As described in the paper, _________ (here, we put a relatively large amount of fluff explaining why we would choose to analyze the variables above based on stuff from the paper.) Based on our ______ (Method, difference in means?) analysis of lab costs for chain and non-chain providers, we found that average lab costs are ________ (higher/lower) for chains than non-chains. As we touched on previously, this could be because of ________ (pick the reason as explained above based on higher or lower, more fluff from paper). 
+
+
+The paper explains that "large chains... may have lower average costs due to volume discounts for pharmaceuticals as well as centralized clinical laboratories". Based on this quotation, we decided to analyze how costs differ across chains vs. not chains for epo_cost (Epogen variable, drug) and total_costs_hd_labs (lab cost variable)
+
+Examining Drug Cost, Chain vs. Not Chain
+```{r}
+#THIS CODE IS WRONG BUT I AM GOING TO OFFICE HOURS 9am FRI TO DO THIS WITH ALEX
+#omitting NAs in hcris_data
+hcris_noNA = na.omit(hcris_data)
+#make epo_cost numeric
+hcris_noNA$epo_cost = as.numeric(hcris_noNA$epo_cost)
+
+#subset based on chain or not chain
+hcris_chain_noNA = subset(hcris_noNA, chain_indicator == "Y")
+hcris_not_chain_noNA = subset(hcris_noNA, chain_indicator == "N")
+#again, make epo_cost numeric
+as.numeric(hcris_chain_noNA$epo_cost)
+
+#mean() wasn't working for some reason so got mean from this output
+t.test(hcris_chain_noNA$epo_cost, mu = 1000, alternative = "two.sided")
+#mean = 555680.8 
+
+t.test(hcris_not_chain_noNA$epo_cost, mu = 555680.8, alternative = "greater")
+
+#look at difference in mean cost
+#is epo_cost per unit or total expenditure for the chain?
+
+sample_chain_noNA = sample(hcris_chain_noNA$epo_cost, 379, replace = TRUE)
+aov(hcris_chain_noNA$epo_cost ~ sample_chain_noNA)
+```
+# Analysis Main Points -- Ellis turning this into paragraph
+- Assuming this variable captures average Epogen expenditure for the entire firm, could be higher or lower for chains based on:
+  - could be higher because of increased dosage seen in chains as explained in the paper
+  - could be lower because chains have the ability to cut costs with larger-scale supply options (not sure if this is exactly the right way to word this, check in paper)
+
+Feel free to follow this outline, or just write as you see fit: 
+
+Sample sentence for analysis: As described in the paper, _________ (here, we put a relatively large amount of fluff explaining why we would choose to analyze the variables above based on stuff from the paper.) Based on our ______ (Method, difference in means?) analysis of Epogen cost for chain and non-chain providers, we found that average Epogen cost is ________ (higher/lower) for chains than non-chains. As we touched on previously, this could be because of ________ (pick the reason as explained above based on higher or lower, more fluff from paper). 
+
+NAs for Chain vs Not Chain
+```{r}
+hcris_chain = subset(hcris_data, chain_indicator == "Y")
+hcris_not_chain = subset(hcris_data, chain_indicator == "N")
+
+hcris_chain$na_count <- apply(hcris_chain, 1, function(x) sum(is.na(x)))
+sum(hcris_chain$na_count)/nrow(hcris_chain)
+#4.191316
+
+hcris_not_chain$na_count <- apply(hcris_not_chain, 1, function(x) sum(is.na(x)))
+sum(hcris_not_chain$na_count)/nrow(hcris_not_chain)
+#5.279683
+
+
+```
+# Analysis
+

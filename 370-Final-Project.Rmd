@@ -13,14 +13,13 @@ output:
 library(readr)
 library(mosaic)
 library(data.table)
-library("xlsx")
-library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
 library(stringr)
 library(lubridate)
 library(dplyr)
 library(usa)
+library(fixest)
 ```
 
 # ============================================
@@ -409,74 +408,33 @@ head(hcris_data)
 # Question 3 - Analysis 
 # ============================================
 
-Examining Total Cost (Or lab services cost?), Chain vs. Not Chain
+## Lab costs
+
+    As described in the paper, it was found that acquired facilities alter their treatments in ways that increase reimbursements and decrease costs. Acquired facilities and facilities already a part of the chain are able to have an increase in reimbursements from Medicare as they increase the amount of drugs given to each patient. EPOGEN is a drug used to treat anemia and patients EGPOGEN dosage increased 129% when previously independent facilities were acquired by large chains. Further, chains were also able to decrease costs by having "centralized clinical laboratories" and discounts on large volume pharmaceuticals which can decrease the average costs. Large 
+    Observing these changes made after a facility is acquired by a large chain, as well as the position a large chain is in, we decided to analyze the total lab costs of chain facilities versus non-chain facilities. Based on our method of a difference in means test, we found that average lab costs are lower for chains than non-chains. As we touched on previously, this could be because of large chain dialysis facilities having the ability to have centralized laboratories, discounts on pharmaceuticals, attraction of a large customer segment, and the position to bargain with insurance companies. 
+
+## Drug costs - EPOGEN 
+
+The paper examined that facilities acquired by big chains increased the amount of dosage of EPOGEN per patient, which would increase the total cost of the drug, as more is being used per patient. "Patients’ EPOGEN doses increase 129% at independent facilities acquired by large chains." After facilities were acquired by large chains, the method of reporting costs became more standardized, and this standardization showed that an "acquired facility's use of EPOGEN becomes nearly ... twice as high" compared to before the facility was acquired. This increase in the amount of EPOGEN leads us to believe that the total drug cost for chain facilities would be greater than total drug cost as non-chain facilities. Based on our ______ (Method, difference in means?) analysis of EPOGEN cost for chain and non-chain providers, we found that average EPOGEN cost is higher for chains than non-chains. As we touched on previously, this could be because of the increased dosages of EPOGEN per patient at facilities that acquired by large chains. 
+
+## Examining Lab Service Costs, Chain vs. Not Chain
 ```{r}
-#THIS CODE IS WRONG BUT I AM GOING TO OFFICE HOURS 9am FRI TO DO THIS WITH ALEX
-#omitting NAs in hcris_data
-hcris_noNA = na.omit(hcris_data)
+summary(feols(as.numeric(total_costs_hd_labs)~factor(chain_indicator)+as.numeric(total_treatments_hd)+as.numeric(lab_services)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
 
-hcris_noNA$epo_cost = as.numeric(hcris_noNA$total_costs_hd_labs)
 
-#subset based on chain or not chain
-hcris_chain_noNA = subset(hcris_noNA, chain_indicator == "Y")
-hcris_not_chain_noNA = subset(hcris_noNA, chain_indicator == "N")
 
-as.numeric(hcris_chain_noNA$total_costs_hd_labs)
-
-#mean() wasn't working for some reason so got mean from this output
-t.test(hcris_chain_noNA$total_costs_hd_labs, mu = 1000, alternative = "two.sided")
-#mean = 555680.8 
-
-t.test(hcris_not_chain_noNA$total_costs_hd_labs, mu = 555680.8, alternative = "greater")
 ```
-# Analysis Main Points -- Ellis turning this into paragraph
-- Assuming this variable captures average lab expenditure for the entire firm, could be higher or lower for chains based on:
-  - could be higher because of increased dosage seen in chains as explained in the paper
-  - could be lower because chains have the ability to cut costs with larger-scale supply options (not sure if this is exactly the right way to word this, check in paper)
-
-Feel free to follow this outline, or just write as you see fit: 
-
-Sample sentence for analysis: As described in the paper, _________ (here, we put a relatively large amount of fluff explaining why we would choose to analyze the variables above based on stuff from the paper.) Based on our ______ (Method, difference in means?) analysis of lab costs for chain and non-chain providers, we found that average lab costs are ________ (higher/lower) for chains than non-chains. As we touched on previously, this could be because of ________ (pick the reason as explained above based on higher or lower, more fluff from paper). 
+To examine the difference in lab services costs by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd and lab_services, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 482.29 (??) lower than non-chains.
 
 
-The paper explains that "large chains... may have lower average costs due to volume discounts for pharmaceuticals as well as centralized clinical laboratories". Based on this quotation, we decided to analyze how costs differ across chains vs. not chains for epo_cost (Epogen variable, drug) and total_costs_hd_labs (lab cost variable)
-
-Examining Drug Cost, Chain vs. Not Chain
+## Examining Drug (EPOGEN) Costs, Chain vs. Not Chain
 ```{r}
-#THIS CODE IS WRONG BUT I AM GOING TO OFFICE HOURS 9am FRI TO DO THIS WITH ALEX
-#omitting NAs in hcris_data
-hcris_noNA = na.omit(hcris_data)
-#make epo_cost numeric
-hcris_noNA$epo_cost = as.numeric(hcris_noNA$epo_cost)
+summary(feols(as.numeric(epo_rebates)~factor(chain_indicator)+as.numeric(total_treatments_hd)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
 
-#subset based on chain or not chain
-hcris_chain_noNA = subset(hcris_noNA, chain_indicator == "Y")
-hcris_not_chain_noNA = subset(hcris_noNA, chain_indicator == "N")
-#again, make epo_cost numeric
-as.numeric(hcris_chain_noNA$epo_cost)
-
-#mean() wasn't working for some reason so got mean from this output
-t.test(hcris_chain_noNA$epo_cost, mu = 1000, alternative = "two.sided")
-#mean = 555680.8 
-
-t.test(hcris_not_chain_noNA$epo_cost, mu = 555680.8, alternative = "greater")
-
-#look at difference in mean cost
-#is epo_cost per unit or total expenditure for the chain?
-
-sample_chain_noNA = sample(hcris_chain_noNA$epo_cost, 379, replace = TRUE)
-aov(hcris_chain_noNA$epo_cost ~ sample_chain_noNA)
 ```
-# Analysis Main Points -- Ellis turning this into paragraph
-- Assuming this variable captures average Epogen expenditure for the entire firm, could be higher or lower for chains based on:
-  - could be higher because of increased dosage seen in chains as explained in the paper
-  - could be lower because chains have the ability to cut costs with larger-scale supply options (not sure if this is exactly the right way to word this, check in paper)
+To examine the difference in drug costs, specifically of EPOGEN, by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 31578.43 (??) higher than non-chains. This could be because of the fact that drug dosages increases as explained in the paper as providers changed from chain to not-chain, even though cost of individual dosage may have gone down. 
 
-Feel free to follow this outline, or just write as you see fit: 
-
-Sample sentence for analysis: As described in the paper, _________ (here, we put a relatively large amount of fluff explaining why we would choose to analyze the variables above based on stuff from the paper.) Based on our ______ (Method, difference in means?) analysis of Epogen cost for chain and non-chain providers, we found that average Epogen cost is ________ (higher/lower) for chains than non-chains. As we touched on previously, this could be because of ________ (pick the reason as explained above based on higher or lower, more fluff from paper). 
-
-NAs for Chain vs Not Chain
+## NAs for Chain vs Not Chain
 ```{r}
 hcris_chain = subset(hcris_data, chain_indicator == "Y")
 hcris_not_chain = subset(hcris_data, chain_indicator == "N")
@@ -493,3 +451,4 @@ sum(hcris_not_chain$na_count)/nrow(hcris_not_chain)
 ```
 # Analysis
 
+  From the source material provided for this project, we know that generally, chain providers have better data collection and organization systems than individual providers. We decided to attempt to analyze this trend by comparing the mean number of missing values for chain providers and non-chain providers. To perform this analysis, we split the original cleaned data set into two separate data sets: one with observations from chain providers, and one with observations from non-chain providers. Then, we created a new column in each data set that contained the number of NA values for each observation. To get the average number of NA values for an observation, we took the sum of each of these columns and divided the sums by the number of observations in each data set, respectively. This gave us an average of about 4 NA values recorded for each observation in the chain data, and an average of about 5 NA values recorded for each observation in the non-chain data. These results follow the background given in the paper, as they show a higher average amount of missing data per provider for non-chain providers than chain providers. If we were to take this analysis further, we would perform a statistical test that would determine whether or not this 1-value difference is statistically significant. 

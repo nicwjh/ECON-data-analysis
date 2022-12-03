@@ -301,17 +301,17 @@ hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Slice zip codes to first 5 digits of string
 hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
 ##### 9b + 9c - Clean zip codes #####
- hcris_dataZipClean=as.data.frame(c())
- for(i in unique(hcris_data$prvdr_num)){
-  testcase=hcris_data%>%filter(prvdr_num==i) %>%
+ hcris_dataZipClean=as.data.frame(c()) #make blank data frame
+ for(i in unique(hcris_data$prvdr_num)){ #loop through each unique provider number 
+  testcase=hcris_data%>%filter(prvdr_num==i) %>% #select zip code variable from ith provider number
    select(zip_code)
-  if(nrow(unique(na.omit(testcase)))==1){
+  if(nrow(unique(na.omit(testcase)))==1){ # see if there is only 1 zip code associated with the provider
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
     filter(prvdr_num==i) %>%
-  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i))))
+  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i))))  #if there is only 1 zip code, replace all NA zip code values for the ith provider with it's unique zip code and append to data frame
     } else{
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
-    filter(prvdr_num==i))
+    filter(prvdr_num==i))  #if there is more than 1 zip code, do nothing but add data to clean data frame so in end you get all original data back with cleaned zips for NAs that can be unambiguously replaced
     }
  }
 hcris_data=hcris_dataZipClean
@@ -416,7 +416,7 @@ For the analysis portion of our project, we performed three analyses: we examine
   These analysis choices were inspired by several statements in the supporting paper, "How Acquisitions Affect Firm Behavior and Performance: Evidence from the Dialysis Industry". In this paper, it is explained that multiple differences in drug cost were observed when comparing chain vs. non-chain providers. Specifically for EPOGEN, it was found that EPOGEN dosage increased 129% when previously independent provider facilities were acquired by large chains. Additionally, the paper supports that "large chains... may have lower average costs due to volume discounts for pharmaceuticals as well as centralized clinical laboratories". Because of these two facts, we determined that analyzing the changes in EPOGEN cost would be a worthwhile analysis to analyze the difference in chain vs. non-chain provider behavior. 
   For the cost of lab services, the evidence described in the paper explains that chains were able to decrease lab services costs by having "centralized clinical laboratories" and discounts on large volume pharmaceuticals which can decrease the average drug costs. This inspired us to include the relationship between chain vs. non-chain and lab services in our analysis as well.
   Lastly, our decision to examine the accuracy of data collection and reporting for chains vs. non-chains from source material support that highlighted improvements in data quality after providers changed from chain to non-chain. 
-  
+
 ## Examining Lab Service Costs, Chain vs. Not Chain
 ```{r}
 summary(feols(as.numeric(total_costs_hd_labs)~factor(chain_indicator)+as.numeric(total_treatments_hd)+as.numeric(lab_services)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))

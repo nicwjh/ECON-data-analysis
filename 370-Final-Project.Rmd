@@ -408,31 +408,31 @@ head(hcris_data)
 # Question 3 - Analysis 
 # ============================================
 
-## Lab costs
+Check with group: combine analysis into one large block of text, or keep it separated? 
+Ask Ellis if she was directly quoting on some parts
+if someone wants to find support for the data reporting stuff that also could beneficial
 
-    As described in the paper, it was found that acquired facilities alter their treatments in ways that increase reimbursements and decrease costs. Acquired facilities and facilities already a part of the chain are able to have an increase in reimbursements from Medicare as they increase the amount of drugs given to each patient. EPOGEN is a drug used to treat anemia and patients EGPOGEN dosage increased 129% when previously independent facilities were acquired by large chains. Further, chains were also able to decrease costs by having "centralized clinical laboratories" and discounts on large volume pharmaceuticals which can decrease the average costs. Large 
-    Observing these changes made after a facility is acquired by a large chain, as well as the position a large chain is in, we decided to analyze the total lab costs of chain facilities versus non-chain facilities. Based on our method of a difference in means test, we found that average lab costs are lower for chains than non-chains. As we touched on previously, this could be because of large chain dialysis facilities having the ability to have centralized laboratories, discounts on pharmaceuticals, attraction of a large customer segment, and the position to bargain with insurance companies. 
-
-## Drug costs - EPOGEN 
-
-The paper examined that facilities acquired by big chains increased the amount of dosage of EPOGEN per patient, which would increase the total cost of the drug, as more is being used per patient. "Patients’ EPOGEN doses increase 129% at independent facilities acquired by large chains." After facilities were acquired by large chains, the method of reporting costs became more standardized, and this standardization showed that an "acquired facility's use of EPOGEN becomes nearly ... twice as high" compared to before the facility was acquired. This increase in the amount of EPOGEN leads us to believe that the total drug cost for chain facilities would be greater than total drug cost as non-chain facilities. Based on our ______ (Method, difference in means?) analysis of EPOGEN cost for chain and non-chain providers, we found that average EPOGEN cost is higher for chains than non-chains. As we touched on previously, this could be because of the increased dosages of EPOGEN per patient at facilities that acquired by large chains. 
-
+For the analysis portion of our project, we performed three analyses: we examined the relationship between whether a provider was a chain and drug cost, the relationship between whether a provider was a chain and cost of lab services, and the relationship between whether a provider was a chain and the accuracy of data reporting as represented by the number of missing values for individual provider observations. 
+  These analysis choices were inspired by several statements in the supporting paper, "How Acquisitions Affect Firm Behavior and Performance: Evidence from the Dialysis Industry". In this paper, it is explained that multiple differences in drug cost were observed when comparing chain vs. non-chain providers. Specifically for EPOGEN, it was found that EPOGEN dosage increased 129% when previously independent provider facilities were acquired by large chains. Additionally, the paper supports that "large chains... may have lower average costs due to volume discounts for pharmaceuticals as well as centralized clinical laboratories". Because of these two facts, we determined that analyzing the changes in EPOGEN cost would be a worthwhile analysis to analyze the difference in chain vs. non-chain provider behavior. 
+  For the cost of lab services, the evidence described in the paper explains that chains were able to decrease lab services costs by having "centralized clinical laboratories" and discounts on large volume pharmaceuticals which can decrease the average drug costs. This inspired us to include the relationship between chain vs. non-chain and lab services in our analysis as well.
+  Lastly, our decision to examine the accuracy of data collection and reporting for chains vs. non-chains from source material support that highlighted improvements in data quality after providers changed from chain to non-chain. 
+  
 ## Examining Lab Service Costs, Chain vs. Not Chain
 ```{r}
 summary(feols(as.numeric(total_costs_hd_labs)~factor(chain_indicator)+as.numeric(total_treatments_hd)+as.numeric(lab_services)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
 
-
-
 ```
-To examine the difference in lab services costs by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd and lab_services, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 482.29 (??) lower than non-chains.
+Check with group: wording on why the additional variables are included. 
+
+To examine the difference in lab services costs by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd and lab_services to improve the accuracy of the model, as the number of treatments and the the number of lab services have a direct relationship with total lab costs. We also included fixed effects for year and provider number in the regression to allow us to control for changes over time and different provider averages, which essentially isolated our regression so that we were looking at how costs changed for providers that switched from chain to non-chain rather than simply examining the average epo_cost for all the chains in the data vs. non-chains. Our model estimates that the cost of lab services for chains is $482.29 lower than non-chains. This value is statistically significant at the 5% level with a p-value of 2.4540e-02. This supports the statement in the paper that chain providers have lower lab costs because of centralized laboratories. As providers switched from non-chain to chain, they were able to lower lab costs by utilizing these centralized laboratories as opposed to using alternative methods, like having to outsource lab work to a third-party company. 
 
 
 ## Examining Drug (EPOGEN) Costs, Chain vs. Not Chain
 ```{r}
-summary(feols(as.numeric(epo_rebates)~factor(chain_indicator)+as.numeric(total_treatments_hd)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
+summary(feols(as.numeric(epo_cost)~factor(chain_indicator)+as.numeric(total_treatments_hd)+as.numeric(epo_rebates)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
 
 ```
-To examine the difference in drug costs, specifically of EPOGEN, by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 31578.43 (??) higher than non-chains. This could be because of the fact that drug dosages increases as explained in the paper as providers changed from chain to not-chain, even though cost of individual dosage may have gone down. 
+To examine the difference in drug costs, specifically of EPOGEN, by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on EPOGEN costs (epo_cost). We included the variables total_treatments_hd and epo_rebates to improve the fit of our model, as the number of treatments at a provider and the amount of rebates the provider was able to acquire would have a relationship with the cost of EPOGEN. We included fixed effects for year and provider number in this model as well. Our model estimates that the cost of drug services for chains is $27,355 lower than non-chains. This value is statistically significant at the 5% level with a p-value of 0.015. Based on the paper, this is most likely because chains are able to benefit from economies of scale when purchasing pharmaceuticals. Chains also may have contracts with certain pharmaceutical companies that allow them to purchase product at a lower cost on the assumption that many providers from the chain will purchase from the same company. 
 
 ## NAs for Chain vs Not Chain
 ```{r}
@@ -441,14 +441,18 @@ hcris_not_chain = subset(hcris_data, chain_indicator == "N")
 
 hcris_chain$na_count <- apply(hcris_chain, 1, function(x) sum(is.na(x)))
 sum(hcris_chain$na_count)/nrow(hcris_chain)
-#4.191316
 
 hcris_not_chain$na_count <- apply(hcris_not_chain, 1, function(x) sum(is.na(x)))
 sum(hcris_not_chain$na_count)/nrow(hcris_not_chain)
-#5.279683
+
+BothWithNA=rbind(hcris_not_chain,hcris_chain)
+ggplot(BothWithNA, aes(x=chain_indicator, y=na_count)) + geom_boxplot(fill = c("#0099f8", "#e74c3c")) +labs(
+    x = "Chain Indicator",
+    y = "NA Count")
 
 
 ```
 # Analysis
+Check with group: little bit more analysis for the box plot?
 
-  From the source material provided for this project, we know that generally, chain providers have better data collection and organization systems than individual providers. We decided to attempt to analyze this trend by comparing the mean number of missing values for chain providers and non-chain providers. To perform this analysis, we split the original cleaned data set into two separate data sets: one with observations from chain providers, and one with observations from non-chain providers. Then, we created a new column in each data set that contained the number of NA values for each observation. To get the average number of NA values for an observation, we took the sum of each of these columns and divided the sums by the number of observations in each data set, respectively. This gave us an average of about 4 NA values recorded for each observation in the chain data, and an average of about 5 NA values recorded for each observation in the non-chain data. These results follow the background given in the paper, as they show a higher average amount of missing data per provider for non-chain providers than chain providers. If we were to take this analysis further, we would perform a statistical test that would determine whether or not this 1-value difference is statistically significant. 
+  From the source material provided for this project, we know that generally, chain providers have better data collection and organization systems than individual providers. We decided to attempt to analyze this trend by comparing the mean number of missing values for chain providers and non-chain providers. To perform this analysis, we split the original cleaned data set into two separate data sets: one with observations from chain providers, and one with observations from non-chain providers. Then, we created a new column in each data set that contained the number of NA values for each observation. To get the average number of NA values for an observation, we took the sum of each of these columns and divided the sums by the number of observations in each data set, respectively. This gave us an average of about 4 NA values recorded for each observation in the chain data, and an average of about 5 NA values recorded for each observation in the non-chain data. These results follow the background given in the paper, as they show a higher average amount of missing data per provider for non-chain providers than chain providers. In the box plot visualization, we can see that this conclusion is further supported as the plot shows that non-chains providers have a slight tendency to record more NA values than chain provider. If we were to take this analysis further, we would perform a statistical test that would determine whether or not this 1-value difference is statistically significant. 

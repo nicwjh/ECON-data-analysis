@@ -13,14 +13,13 @@ output:
 library(readr)
 library(mosaic)
 library(data.table)
-library("xlsx")
-library(openxlsx)
 library(mvtnorm)
 library(tidyverse)
 library(stringr)
 library(lubridate)
 library(dplyr)
 library(usa)
+library(fixest)
 ```
 
 # ============================================
@@ -63,50 +62,39 @@ parse = function(data, match){
   }
   indices
 }
-
 variable_codes <- read.csv("variable_codes.csv")
-
 # 0 pad lines and columns to match desired character count for key
 for (i in 1:nrow(variable_codes)){
   variable_codes$line[i] = str_pad(variable_codes$line[i], 5, pad = "0")
   variable_codes$column[i] = str_pad(variable_codes$column[i], 4, pad = "0")
 }
-
 # Generate variable code keys 
 variable_codes$key = paste(variable_codes$worksheet, variable_codes$line, variable_codes$column, sep = '')
-
 # Fix typo error in data
 variable_codes$key[35] = "S000001001020300"
-
 # Regular expression to parse keys 
 toMatch = paste(variable_codes$key, collapse = "|")
-
 # Read in all CSVs 
 for (i in 1998:2010){
   
   rpt_name = paste("rpt", i, sep = '')
   nmrc_name = paste("nmrc", i, sep = '')
   alpha_name = paste("alpha", i, sep = '')
-
   rpt <- read_csv(paste("hcris_raw/rnl_rpt265_94_", i , ".csv",sep = ''), show_col_types = F)
   nmrc <- read_csv(paste("./hcris_raw/rnl_nmrc265_94_", i, "_long.csv", sep = ''), show_col_types = F)
   alpha  <- read_csv(paste("./hcris_raw/rnl_alpha265_94_", i, "_long.csv", sep = ''), show_col_types = F)
-
   nmrc$key = paste(nmrc$wksht_cd, nmrc$line_num, nmrc$clmn_num, sep = '')
   alpha$key = paste(alpha$wksht_cd, alpha$line_num, alpha$clmn_num, sep = '')
-
   # Parse alpha and nmrc data for matching variable codes 
   indices = parse(nmrc$key, toMatch)
   nmrc_parsed = nmrc[indices,]
   indices = parse(alpha$key, toMatch)
   alpha_parsed = alpha[indices,]
-
   assign(rpt_name, rpt)
   assign(nmrc_name, nmrc_parsed)
   assign(alpha_name, alpha_parsed)
   
 }
-
 # Clean up environment
 rm(rpt, nmrc, alpha, rpt_name, nmrc_name, alpha_name, alpha_parsed, nmrc_parsed)
 ```
@@ -123,7 +111,6 @@ long_to_wide_alpha = function(data){
   wide = dcast(data, rpt_rec_num~key, value.var = "alphnmrc_itm_txt")
   return(wide)
 }
-
 # Takes a long nmrc dataframe, merges variable codes, and returns wide nmrc dataframe
 long_to_wide_nmrc = function(data){
   data$key <- dplyr::recode(
@@ -134,10 +121,8 @@ long_to_wide_nmrc = function(data){
   wide = dcast(data, rpt_rec_num~key, value.var = "itm_val_num")
   return(wide)
 }
-
 # Generate key to merge variable names into dataframe
 idkey <- data.frame("original" = variable_codes$key, "new" = variable_codes$variable)
-
 # Declare alpha and nmrc lists to iterate through
 alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha2003,
                   alpha2004, alpha2005, alpha2006, alpha2007, alpha2008, alpha2009, 
@@ -145,7 +130,6 @@ alpha_list = list(alpha1998, alpha1999, alpha2000, alpha2001, alpha2002, alpha20
 nmrc_list = list(nmrc1998, nmrc1999, nmrc2000, nmrc2001, nmrc2002, nmrc2003, 
                  nmrc2004, nmrc2005, nmrc2006, nmrc2007, nmrc2008, nmrc2009, 
                  nmrc2010)
-
 # Convert data from all years from long to wide 
 for(i in 1998:2010){
   j = i - 1997
@@ -159,28 +143,23 @@ for(i in 1998:2010){
   assign(alpha_wide_name, alpha_wide)
   j = j+1
 }
-
 # Add in missing epo_cost and state columns for 1998 (to match # of columns)
 alpha_wide_1998$state = NA
 alpha_wide_1998 <- subset(alpha_wide_1998, select=c(1:9, 11, 10))
 nmrc_wide_1998$epo_cost = NA
 nmrc_wide_1998 <- subset(nmrc_wide_1998, select = c(1:6, 26, 7:25))
-
 wide_alpha_list = list(alpha_wide_1998, alpha_wide_1999, alpha_wide_2000, alpha_wide_2001, 
                        alpha_wide_2002, alpha_wide_2003, alpha_wide_2004, alpha_wide_2005, 
                        alpha_wide_2006, alpha_wide_2007, alpha_wide_2008, alpha_wide_2009, 
                        alpha_wide_2010)
-
 wide_nmrc_list = list(nmrc_wide_1998, nmrc_wide_1999, nmrc_wide_2000, nmrc_wide_2001, 
                       nmrc_wide_2002, nmrc_wide_2003, nmrc_wide_2004, nmrc_wide_2005, 
                       nmrc_wide_2006, nmrc_wide_2007, nmrc_wide_2008, nmrc_wide_2009, 
                       nmrc_wide_2010)
-
 rpt_list = list(rpt1998[c(1,13,14)], rpt1999[c(1,13,14)], rpt2000[c(1,13,14)], rpt2001[c(1,13,14)], 
                 rpt2002[c(1,13,14)], rpt2003[c(1,13,14)], rpt2004[c(1,13,14)], rpt2005[c(1,13,14)], 
                 rpt2006[c(1,13,14)], rpt2007[c(1,13,14)], rpt2008[c(1,13,14)], rpt2009[c(1,13,14)], 
                 rpt2010[c(1,13,14)])
-
 # Merge all years 
 for(i in 1998:2010){
   j = i - 1997
@@ -199,7 +178,6 @@ for(i in 1998:2010){
   assign(merged_year_name, merged_year)
   j = j+1
 }
-
 # Write all files to CSVs in hcris_cleaned directory 
 fwrite(merged1998, file = "hcris_cleaned/hcris_1998.csv")
 fwrite(merged1999, file = "hcris_cleaned/hcris_1999.csv")
@@ -223,18 +201,15 @@ fwrite(merged2010, file = "hcris_cleaned/hcris_2010.csv")
 rbind 13 reformatted datasets
 ```{r}
 hcris_data <- read_csv("hcris_cleaned/hcris_1998.csv", show_col_types = F)
-
 # rbind all 13 datasets
 for (i in 1999:2010){
   current = paste("hcris_cleaned/hcris_", i, ".csv", sep = '')
   to_bind <- read_csv(current, show_col_types = F)
   hcris_data <- rbind(hcris_data, to_bind)
 }
-
 # Rename first column and cast prvdr_num as numeric
 colnames(hcris_data)[1] = "report_number"
 hcris_data$prvdr_num = as.numeric(hcris_data$prvdr_num)
-
 # Take head of fully reformatted data
 head(hcris_data)
 ```
@@ -265,11 +240,9 @@ Clean epo variables
 ##### 4a - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates == 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices]
-
 ##### 4b - epo_cost #####
 indices = is.na(hcris_data$epo_cost) & hcris_data$epo_rebates != 0 & !is.na(hcris_data$epo_net_cost)
 hcris_data$epo_cost[indices] = hcris_data$epo_net_cost[indices] + hcris_data$epo_rebates[indices]
-
 ##### 4c - epo_cost and epo_net_cost #####
 hcris_data <- hcris_data %>%
   mutate(epo_cost = ifelse(is.na(epo_cost) & 
@@ -278,9 +251,7 @@ hcris_data <- hcris_data %>%
          epo_net_cost = ifelse(is.na(epo_cost) & 
                              epo_rebates == 0 & 
                              is.na(epo_net_cost),0,epo_net_cost))
-
 ##### 4d - Cost data left as missing, nothing to do #####
-
 ##### 4e - epo_net_cost #####
 indices = !is.na(hcris_data$epo_cost) & is.na(hcris_data$epo_net_cost)
 hcris_data$epo_net_cost[indices] = hcris_data$epo_cost[indices] - hcris_data$epo_rebates[indices]
@@ -329,29 +300,27 @@ hcris_data$zip_code=gsub("[[:alpha:]-]", "", hcris_data$zip_code)
 hcris_data=as.data.frame(apply(hcris_data,2,trimws))
 # Slice zip codes to first 5 digits of string
 hcris_data$zip_code=substr(hcris_data$zip_code,1,5)
-
-
 ##### 9b + 9c - Clean zip codes #####
- hcris_dataZipClean=as.data.frame(c())
- for(i in unique(hcris_data$prvdr_num)){
-  testcase=hcris_data%>%filter(prvdr_num==i) %>%
+ hcris_dataZipClean=as.data.frame(c()) #make blank data frame
+ for(i in unique(hcris_data$prvdr_num)){ #loop through each unique provider number 
+  testcase=hcris_data%>%filter(prvdr_num==i) %>%  #select zip code variable from ith provider number
    select(zip_code)
-  if(nrow(unique(na.omit(testcase)))==1){
+  if(nrow(unique(na.omit(testcase)))==1){  # see if there is only 1 zip code associated with the provider
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
     filter(prvdr_num==i) %>%
-  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i))))
+  mutate(zip_code=rep(na.omit(zip_code)[1], sum(prvdr_num==i|prvdr_num!=i)))) #if there is only 1 zip code, replace all NA zip code values for the ith provider with it's unique zip code and append to data frame
     } else{
     hcris_dataZipClean=rbind(hcris_dataZipClean,hcris_data %>%
-    filter(prvdr_num==i))
+    filter(prvdr_num==i))  #if there is more than 1 zip code, do nothing but add data to clean data frame so in end you get all original data back with cleaned zips for NAs that can be unambiguously replaced
     }
  }
-hcris_data=hcris_dataZipClean
+hcris_data=hcris_dataZipClean 
 ```
 
 ### Question 10
 Clean missing states
 ```{r}
-# Helper function to pull state codes from zips
+# Helper function to pull state codes from zips. Enter zip code, outputs state code
 zipz=usa::zipcodes
  getstate = function(zipvec){
    codes=c()
@@ -367,11 +336,9 @@ codes=c(codes,Temp$state[1])
  }
  
 # Separating data set to only fix ones with state missing 
-nostatefixed=hcris_data %>% filter(is.na(state))%>% mutate(state=getstate(zipvec = zip_code))
-hastate=hcris_data %>% filter(is.na(state)==F)
-
+nostatefixed=hcris_data %>% filter(is.na(state))%>% mutate(state=getstate(zipvec = zip_code))  #mutate state var by inputting zips into getstate to get state codes and replace the NAs with the state code from the output of the getstate function
+hastate=hcris_data %>% filter(is.na(state)==F) # separated ones that don't need to be fixed
 # Combine data sets back together
-hcris_data=rbind(hastate,nostatefixed)
 ```
 
 ### Question 11
@@ -380,14 +347,11 @@ Cleaning chain_identity
 # Regular expressions for string parsing 
 f_regex = "^FEN|^FER|^FES|^FR4|^FRE|^FRR|^FRS|^\\bDRES\\B"
 d_regex = "^DAC|^DAN|^DAV|^DAT|^DV"
-
 # Indicator variables for iteration
 hcris_data$is_fresenius = grepl(f_regex, hcris_data$chain_identity, ignore.case = TRUE)
 hcris_data$is_davita = grepl(d_regex, hcris_data$chain_identity, ignore.case = TRUE)
-
 # Default - when chain_indicator == 0 (not chain)
 hcris_data$chain_id = 0
-
 # Iterate through data to clean chain_identity
 for (i in 1:nrow(hcris_data)){
   if (is.na(hcris_data$chain_identity[i])){ 
@@ -415,7 +379,6 @@ for (i in 1:nrow(hcris_data)){
     hcris_data$chain_identity[i] = "Not chain"
   }
 }
-
 # Drop indicator variables 
 hcris_data$is_fresenius = NULL 
 hcris_data$is_davita = NULL 
@@ -428,23 +391,71 @@ Remake chain_indicator
 chains = hcris_data$chain_identity == "Fresenius" | 
   hcris_data$chain_identity == "DaVita" | 
   hcris_data$chain_identity == "Other"
-
 not_chains = hcris_data$chain_identity == "Not chain"
-
 chain_NA = is.na(hcris_data$chain_identity)
-
 # Remake chain_indicator variable
 hcris_data$chain_indicator[chains] = "Y"
 hcris_data$chain_indicator[not_chains] = "N"
 hcris_data$chain_indicator[chain_NA] = NA
-
 # Take head of fully cleaned data
 head(hcris_data)
 ```
 
+
+
 # ============================================
 # Question 3 - Analysis 
 # ============================================
+
+## Lab costs
+
+    As described in the paper, it was found that acquired facilities alter their treatments in ways that increase reimbursements and decrease costs. Acquired facilities and facilities already a part of the chain are able to have an increase in reimbursements from Medicare as they increase the amount of drugs given to each patient. EPOGEN is a drug used to treat anemia and patients EGPOGEN dosage increased 129% when previously independent facilities were acquired by large chains. Further, chains were also able to decrease costs by having "centralized clinical laboratories" and discounts on large volume pharmaceuticals which can decrease the average costs. Large 
+    Observing these changes made after a facility is acquired by a large chain, as well as the position a large chain is in, we decided to analyze the total lab costs of chain facilities versus non-chain facilities. Based on our method of a difference in means test, we found that average lab costs are lower for chains than non-chains. As we touched on previously, this could be because of large chain dialysis facilities having the ability to have centralized laboratories, discounts on pharmaceuticals, attraction of a large customer segment, and the position to bargain with insurance companies. 
+
+## Drug costs - EPOGEN 
+
+The paper examined that facilities acquired by big chains increased the amount of dosage of EPOGEN per patient, which would increase the total cost of the drug, as more is being used per patient. "Patients’ EPOGEN doses increase 129% at independent facilities acquired by large chains." After facilities were acquired by large chains, the method of reporting costs became more standardized, and this standardization showed that an "acquired facility's use of EPOGEN becomes nearly ... twice as high" compared to before the facility was acquired. This increase in the amount of EPOGEN leads us to believe that the total drug cost for chain facilities would be greater than total drug cost as non-chain facilities. Based on our ______ (Method, difference in means?) analysis of EPOGEN cost for chain and non-chain providers, we found that average EPOGEN cost is higher for chains than non-chains. As we touched on previously, this could be because of the increased dosages of EPOGEN per patient at facilities that acquired by large chains. 
+
+## Examining Lab Service Costs, Chain vs. Not Chain
 ```{r}
+summary(feols(as.numeric(total_costs_hd_labs)~factor(chain_indicator)+as.numeric(total_treatments_hd)+as.numeric(lab_services)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
+
+
 
 ```
+To examine the difference in lab services costs by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd and lab_services, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 482.29 (??) lower than non-chains.
+
+
+## Examining Drug (EPOGEN) Costs, Chain vs. Not Chain
+```{r}
+summary(feols(as.numeric(epo_rebates)~factor(chain_indicator)+as.numeric(total_treatments_hd)|factor(year)+factor(prvdr_num), data=hcris_data, cluster=~prvdr_num))
+
+```
+To examine the difference in drug costs, specifically of EPOGEN, by chain vs. not chain, we created a fixed-effects OLS model to examine the influence the chain_indicator variable on total lab costs. We included the variables total_treatments_hd, and fixed effects for year and prvdr_num in the regression to increase the accuracy of our model. Our model estimates that the cost of lab services for chains is 31578.43 (??) higher than non-chains. This could be because of the fact that drug dosages increases as explained in the paper as providers changed from chain to not-chain, even though cost of individual dosage may have gone down. 
+
+## NAs for Chain vs Not Chain
+```{r}
+hcris_chain = subset(hcris_data, chain_indicator == "Y")
+hcris_not_chain = subset(hcris_data, chain_indicator == "N")
+
+hcris_chain$na_count <- apply(hcris_chain, 1, function(x) sum(is.na(x)))
+hcris_chainMeanNA=mean(hcris_chain$na_count)
+hcris_chainMeanNA
+#4.191316
+
+hcris_not_chain$na_count <- apply(hcris_not_chain, 1, function(x) sum(is.na(x)))
+hcris_not_chainMeanNA=mean(hcris_not_chain$na_count)
+hcris_not_chainMeanNA
+#5.279683
+
+
+BothWithNA=rbind(hcris_not_chain,hcris_chain)
+ggplot(BothWithNA, aes(x=chain_indicator, y=na_count)) + geom_boxplot(fill = c("#0099f8", "#e74c3c")) +labs(
+    x = "Chain Indicator",
+    y = "NA Count")
+
+
+```
+# Analysis
+
+  From the source material provided for this project, we know that generally, chain providers have better data collection and organization systems than individual providers. We decided to attempt to analyze this trend by comparing the mean number of missing values for chain providers and non-chain providers. To perform this analysis, we split the original cleaned data set into two separate data sets: one with observations from chain providers, and one with observations from non-chain providers. Then, we created a new column in each data set that contained the number of NA values for each observation. To get the average number of NA values for an observation, we took the sum of each of these columns and divided the sums by the number of observations in each data set, respectively. This gave us an average of about 4 NA values recorded for each observation in the chain data, and an average of about 5 NA values recorded for each observation in the non-chain data. These results follow the background given in the paper, as they show a higher average amount of missing data per provider for non-chain providers than chain providers. If we were to take this analysis further, we would perform a statistical test that would determine whether or not this 1-value difference is statistically significant. In the box plot visualization, we can see that non-chains providers have a slight tendency to record more NA values than chain provider. 
